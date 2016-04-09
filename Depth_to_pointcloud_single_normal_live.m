@@ -16,6 +16,63 @@ ylabel(player.Axes,'Y (m)');
 zlabel(player.Axes,'Z (m)');
 
 
+taken = 50;
+filter = 10;
+
+for i = 1:taken
+    depthImage(:,:,i) = step(depthDevice);
+end
+
+for i = 1:424
+    for j = 1:512
+        for b = 1:taken
+            if depthImage(i,j,b) == 0;
+                depthImage(i,j,:) = 0;
+            end
+        end
+    end
+end
+
+for b = 1:taken %trimming minium and maxium length
+    for i = 1:424
+        for j = 1:512
+            if depthImage(i,j,b) > 1300
+                depthImage(i,j,b) = 0;
+            end
+            if depthImage(i,j,b) < 800
+                depthImage(i,j,b) = 0;
+            end
+        end
+    end
+end
+
+dImage_sum = uint16(zeros(424,512,taken-filter));
+
+
+for b = 1:(taken-filter)  %total elements to be summed
+    start = b;
+    finish = start + filter;
+    for index = start:finish  %sum elements
+        for i = 1:424     %row
+            for j = 1:512 %colom
+                dImage_sum(i,j,b) = dImage_sum(i,j,b) + depthImage(i,j,index);
+            end
+        end
+    end
+end
+
+dImage_filtered = zeros(424,512,taken-filter);
+
+for b = 1:taken-filter
+    for i = 1:424     %row
+        for j = 1:512 %colom
+            for k = 1:filter
+                dImage_filtered(i,j,b) = dImage_sum(i,j,k);
+            end
+        end
+    end
+end
+
 
 frames = 5;
 max_matches = 500;
@@ -36,50 +93,9 @@ for p = 1:frames
     ww = 0;
     normals = 0;
     
-    for i = 1:5
-        depthImage(:,:,i) = step(depthDevice);
-    end
-    
-    
-    for i = 1:424
-        for j = 1:512
-            for b = 1:5
-                if depthImage(i,j,b) == 0;
-                    depthImage(i,j,:) = 0;
-                end
-            end
-        end
-    end
-    
-    for b = 1:5
-        for i = 1:424
-            for j = 1:512
-                if depthImage(i,j,b) > 1300
-                    depthImage(i,j,b) = 0;
-                end
-                if depthImage(i,j,b) < 800
-                    depthImage(i,j,b) = 0;
-                end
-            end
-        end
-    end
-    
-    dImage = uint16(zeros(424,512));
-    
-    for b = 1:5
-        for i = 1:424
-            for j = 1:512
-                dImage(i,j) = dImage(i,j) + depthImage(i,j,b);
-            end
-        end
-    end
-    
-    ptCloud = pcfromkinect(depthDevice,dImage);
-    
-    %ptCloud = pcdownsample(ptCloud,'random',0.80);
+    ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,frame));
     
     normals = pcnormals(ptCloud);
-    
     
     x = ptCloud.Location(1:10:end,1:10:end,1);
     y = ptCloud.Location(1:10:end,1:10:end,2);
