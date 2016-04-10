@@ -1,27 +1,28 @@
-clear, clc, close all
-
-load('FF.mat');
+function [vector_location, vector_number] = vector_base(F)
 
 trim = 0.05;
 n = 1;
 m = 1;
 
-[row_len, col_len] = size(F);
+[row_len, col_len, frames] = size(F);
 match = zeros(row_len,10);
+
 
 for i = 1:row_len
     for j = 1:row_len
-        if (F(j,1) > (F(i,1)-trim)) && (F(j,1) < (F(i,1)+trim))
-            if (F(j,2) > (F(i,2)-trim)) && (F(j,2) < (F(i,2)+trim))
-                if (F(j,3) > (F(i,3)-trim)) && (F(j,3) < (F(i,3)+trim))
-                    match(i,m) = j;
-                    n = n + 1;
-                    m = m + 1;
+        for o = 1:frames
+            if (F(j,1) > (F(i,1)-trim)) && (F(j,1) < (F(i,1)+trim))
+                if (F(j,2) > (F(i,2)-trim)) && (F(j,2) < (F(i,2)+trim))
+                    if (F(j,3) > (F(i,3)-trim)) && (F(j,3) < (F(i,3)+trim))
+                        match(i,m) = j;
+                        n = n + 1;
+                        m = m + 1;
+                    end
                 end
             end
         end
+        m = 1;
     end
-    m = 1;
 end
 [l, width] = size(match);
 
@@ -60,8 +61,6 @@ for i = 1:row_len
     end
 end
 
-
-
 % for i = 1:row_len
 %     fprintf('%d, %d %d %d %d %d %d %d\n',i,match(i,1),match(i,2),match(i,3),match(i,4),match(i,5),match(i,6),match(i,6));
 % end
@@ -70,6 +69,19 @@ end
 scatter3(F(:,1),F(:,2),F(:,3),'b')
 hold on
 scatter3(vector_spot(:,1),vector_spot(:,2),vector_spot(:,3))
+
+
+end
+
+
+
+
+
+
+
+
+
+
 
 
 
