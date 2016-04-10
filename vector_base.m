@@ -7,31 +7,52 @@ m = 1;
 [row_len, col_len, frames] = size(F);
 match = zeros(row_len,10);
 
+left_x = -trim;
+right_x = trim;
+left_y = -trim;
+right_y = trim;
+left_z = -trim;
+right_z = trim;
 
-for j = 1:row_len
-    for o = 1:frames
-        if (F(j,1) > (F(i,1)-trim)) && (F(j,1) < (F(i,1)+trim))
-            if (F(j,2) > (F(i,2)-trim)) && (F(j,2) < (F(i,2)+trim))
-                if (F(j,3) > (F(i,3)-trim)) && (F(j,3) < (F(i,3)+trim))
-                    match(i,m) = j;
-                    n = n + 1;
-                    m = m + 1;
+for i = 1:row_len
+    for o = 2:frames
+        for j = 1:row_len
+            if (F(j,1,o) > (F(i,1,1)+left_x)) && (F(j,1,o) < (F(i,1,1)+right_x))          % X
+                if (F(j,2,o) > (F(i,2,1)+left_y)) && (F(j,2,o) < (F(i,2,1)+right_y))      % Y
+                    if (F(j,3,o) > (F(i,3,1)+left_z)) && (F(j,3,o) < (F(i,3,1)+right_z))  % Z
+                        left_x = F(j,1,o) - trim;
+                        right_x = F(j,1,o) + trim;
+                        left_y = F(j,2,o) - trim;
+                        right_y = F(j,2,o) + trim;
+                        left_z = F(j,3,o) - trim;
+                        right_z = F(j,3,o) + trim;
+                        
+                        match(i,m,o) = j;
+                        n = n + 1;
+                        m = m + 1;
+                    end
                 end
             end
         end
     end
+    left_x = -trim;
+    right_x = trim;
+    left_y = -trim;
+    right_y = trim;
+    left_z = -trim;
+    right_z = trim;
     m = 1;
 end
 
 [l, width] = size(match);
 
-for i = 1:row_len
-    for j = 1:width
-        if i == match(i,j);
-            match(i,j) = 0;
-        end
-    end
-end
+% for i = 1:row_len
+%     for j = 1:width
+%         if i == match(i,j);
+%             match(i,j) = 0;
+%         end
+%     end
+% end
 
 vector_spot= zeros(row_len,3);
 
