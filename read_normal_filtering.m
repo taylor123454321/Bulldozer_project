@@ -97,8 +97,7 @@ end
 m = 1;
 for i = 1:length(matches)
     if matches(i,1) ~= 0
-        main_vector_p(m,:) = A(matches(i),:);
-        matches(i);
+        main_vector_p(m,:) = A(i,:);
         m = m + 1;
     end
 end
