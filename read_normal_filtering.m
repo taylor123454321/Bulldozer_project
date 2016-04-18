@@ -1,6 +1,6 @@
 clear, clc, close all
 
-load('A_for_trip_1.mat');
+load('A_for_trip_4.mat');
 
 frames = 5
 max_matches = 500;
@@ -150,7 +150,7 @@ end
 % quiver3(xxx, yyy, zzz, A_(:,1), A_(:,3), A_(:,2));
 
 % grid on
-u = main_vector_p
+u = main_vector_p;
 for i = 1:length(main_vector_p(:,1))
     for j = 1:3
         main_vector_p(i,j) = main_vector_p(i,j)*1.5;
@@ -162,7 +162,7 @@ mm = zeros(length(main_vector_p(:,1)),1);
 
 quiver3(mm, mm, mm, main_vector_p(:,1), main_vector_p(:,2), main_vector_p(:,3),'black');
 
-% hold off plot(matches) matches
+matches
 %
 % vector_count_2
 

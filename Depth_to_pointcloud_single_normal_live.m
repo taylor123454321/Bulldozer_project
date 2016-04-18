@@ -128,8 +128,8 @@ for p = 1:frames
     %surf(xx,yy,zz)
     %view(0,-45)
     
-    A = zeros(132,3);
-    F = zeros(132,3);
+    A = zeros(30,3);
+    F = zeros(30,3);
     
     k = 1;
     for i = 1:43
