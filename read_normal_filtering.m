@@ -1,6 +1,6 @@
 clear, clc, close all
 
-load('A_for_trip_4.mat');
+load('A_for_trip_2.mat');
 
 frames = 5
 max_matches = 500;
@@ -28,7 +28,7 @@ quiver3(xx, yy, zz, uu, vv, ww);
 %     end
 
 vector_count = zeros(leng,1);
-trim_1 = 0.015;
+trim_1 = 0.06;
 trim_2 = trim_1;
 trim_3 = trim_2;
 m = 1;
@@ -73,97 +73,116 @@ end
 m = 1;
 vector = zeros(1,5);
 
-%     for i = 1:leng_2
-%         if vector_count_2(i,width) ~= 0
-%             main_vector_p(m,:) = A(vector_match(i,1),:); vector(1) = i; m
-%             = m + 1;
-%         end if vector_count_2(i,width-1) ~= 0 && vector(1) ~= i
-%             main_vector_p(m,:) = A(vector_match(i,1),:); vector(2) = i; m
-%             = m + 1;
-%         end if vector_count_2(i,width-2) ~= 0 && vector(1) ~= i  &&
-%         vector(2) ~= i
-%             main_vector_p(m,:) = A(vector_match(i,1),:); m = m + 1;
-%         end
-%     end
-
+matches_cut = matches;
 biggest_match = max(matches);
-cut_off = round(0.7*biggest_match);
+cut_off = 0.6*biggest_match;
 for i = 1:length(matches);
     if matches(i,1) < cut_off
-        matches(i,1) = 0;
+        matches_cut(i,1) = 0;
     end
 end
 
 m = 1;
-for i = 1:length(matches)
-    if matches(i,1) ~= 0
-        main_vector_p(m,:) = A(i,:);
+for i = 1:length(matches_cut)
+    if matches_cut(i,1) ~= 0
+        main_vector(m,:) = A(i,:);
         m = m + 1;
     end
 end
 
-
-% total = zeros(1,frames);
-%
-% for i = 1:frames
-%     for j = 1:max_matches
-%         total(i) = total(i) + vector_time(j,i); if vector_time(j,i)
-%             break
-%         end
-%     end vector_avg(i) = total(i)/j;
-% end
-%
-% vector_avg mean(vector_avg)
-
-% k = 1; for i = 1:leng
-%     if isnan(vector_count(i,1)) || isnan(vector_count(i,2)) ||
-%     isnan(vector_count(i,3))
-%         A_(k,:) = A(i,:); k = k + 1;
-%     end
-% end xxx = zeros(k-1,1); yyy = zeros(k-1,1); zzz = zeros(k-1,1);
-
-% close all
+leng_mid = length(main_vector);
+vector_count_3 = zeros(leng_mid,1);
+trim_1 = 0.1;
+trim_2 = trim_1;
+trim_3 = trim_2;
+m = 1;
+vectors = zeros(3,3);
 
 
-
-% scatter(1:leng,vector_count(:,1)) hold on
-% scatter(1:leng,vector_count(:,2)) hold on
-% scatter(1:leng,vector_count(:,3))
-
-% plot(vector_count(:,1)) hold on plot(vector_count(:,2)) hold on
-% plot(vector_count(:,3))
-
-% for i = 1:frames
-%     hold on scatter(1:max_matches,vector_time(:,i))
-% end
-
-% for i = 1:frames
-%     hold on
-%     scatter3(ones(1,max_matches)*i,1:max_matches,vector_time(:,i))
-% end
-
-
-% for i = 1:frames
-%     hold on plot(vector_time(:,i))
-% end
-
-% quiver3(xxx, yyy, zzz, A_(:,1), A_(:,3), A_(:,2));
-
-% grid on
-u = main_vector_p;
-for i = 1:length(main_vector_p(:,1))
+for i = 1:leng_mid % searching for matching vectors based on correclation
     for j = 1:3
-        main_vector_p(i,j) = main_vector_p(i,j)*1.5;
+        if i ~= j
+            if corr(vectors(j,:)',main_vector(i,:)') > 0.8
+                vectors_to_sum(m,:) = main_vector(j,:);
+                m = m + 1;
+            end
+        end
+    end
+    vectors_to_sum
+    m = 1;
+end
+vector_count_3
+
+% [i,width_2] = size(vector_count_2);
+%
+% m = 1;
+% n = 0;
+% for i = 1:leng_mid
+%     if vector_count_2(i,1) ~= 0
+%         for j = 1:width_2
+%             vector_count_2(m,j) = vector_count_2(i,j);
+%             if vector_count_2(i,j) ~= 0
+%                 n = n + 1;
+%             end
+%         end
+%         vector_match_2(m,1) = i;
+%         matches_2(i,1) = n;
+%         n = 0;
+%         m = m + 1;
+%     end
+% end
+%
+% matches_cut_2 = matches_2;
+% biggest_match_2 = max(matches_2);
+% cut_off_2 = 0.8*biggest_match;
+% for i = 1:length(matches_2);
+%     if matches_2(i,1) < cut_off_2
+%         matches_cut_2(i,1) = 0;
+%     end
+% end
+
+% m = 1;
+% for i = 1:length(matches_cut_2)
+%     if matches_cut_2(i,1) ~= 0
+%         main_vector_mid(m,:) = main_vector(i,:);
+%         m = m + 1;
+%     end
+% end
+
+
+
+
+for i = 1:length(main_vector(:,1))
+    for j = 1:3
+        u(i,j) = main_vector(i,j)*1.2;
     end
 end
+% for i = 1:length(main_vector_mid(:,1))
+%     for j = 1:3
+%         y(i,j) = main_vector_mid(i,j)*1.4;
+%     end
+% end
 
+mm = zeros(length(u(:,1)),1);
+% nn = zeros(length(y(:,1)),1);
 
-mm = zeros(length(main_vector_p(:,1)),1);
+quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+% quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
+grid on
 
-quiver3(mm, mm, mm, main_vector_p(:,1), main_vector_p(:,2), main_vector_p(:,3),'black');
-
-matches
 %
 % vector_count_2
+% close all
+%
+% matches_sorted = sort(matches);
+% deltax = 1;
+% for i = 2:deltax:length(matches_sorted)-1
+%     f(i) = [matches_sorted(i+deltax) - matches_sorted(i-deltax)] / (2*deltax);
+% end
+%
+%
+% plot(f)
+
+
 
 
