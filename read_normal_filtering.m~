@@ -89,19 +89,17 @@ for i = 1:length(matches_cut)
 end
 
 leng_mid = length(main_vector);
-vectors = find_n(main_vector, 3, 0.5)
-v = vectors;
+vectors = find_n(main_vector, 3, -0.5)
 vectors_to_sum = zeros(1,3,3);
 
 for i = 1:leng_mid % searching for matching vectors based on correclation
     for j = 1:3
         correrlation(j) = corr(vectors(j,:)',main_vector(i,:)');
     end
-    correrlation;
     [k,corr_max] = max(correrlation);
     vectors_to_sum(i,:,corr_max) = main_vector(i,:);
 end
-vectors_to_sum;
+vectors_to_sum
 
 % NON ZERO NON ZERO NON ZERO NON ZERO NON ZERO 
 m = 1;
