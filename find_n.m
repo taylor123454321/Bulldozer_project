@@ -1,6 +1,6 @@
 function [vectors] = find_n(main_vector, directions, corr_value)
-%UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+% This function takes set of matching vectors and picks a set number of
+% independent vectors bassed on 'directions'
 
 vectors = zeros(directions,3);
 vectors(1,:) = main_vector(1,:);

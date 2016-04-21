@@ -52,7 +52,7 @@ end
 
 m = 1;
 n = 0;
-for i = 1:leng
+for i = 1:leng % clearing zero lines
     if vector_count(i,1) ~= 0
         for j = 1:width
             vector_count_2(m,j) = vector_count(i,j);
@@ -68,12 +68,12 @@ for i = 1:leng
 end
 
 [leng_2,width] = size(vector_count_2);
-
-m = 1;
-
-matches_cut = matches;
+matches_cut = matches; % trimming the matches
 biggest_match = max(matches);
-cut_off = 0.75*biggest_match;
+cut_off = 0.4*biggest_match; 
+% 0.75 depends on how many matches/vectors there are
+% cut of the amount of surface area covered with vectors wanting to read to
+% noise. A calculation for this is needed.
 for i = 1:length(matches);
     if matches(i,1) < cut_off
         matches_cut(i,1) = 0;
@@ -88,13 +88,14 @@ for i = 1:length(matches_cut)
     end
 end
 
-leng_mid = length(main_vector);
-vectors = find_n(main_vector, 3, 0.5)
+leng_mid = length(main_vector); 
+directions = 3;
+vectors = find_n(main_vector, directions, 0.5) % finds independent vectors from the matches
 v = vectors;
-vectors_to_sum = zeros(1,3,3);
+vectors_to_sum = zeros(1,3,directions);
 
 for i = 1:leng_mid % searching for matching vectors based on correclation
-    for j = 1:3
+    for j = 1:directions
         correrlation(j) = corr(vectors(j,:)',main_vector(i,:)');
     end
     correrlation;
@@ -127,80 +128,12 @@ for i = 1:length(vectors_to_sum(:,1,3))
 end
 % NON ZERO NON ZERO NON ZERO NON ZERO NON ZERO 
 
-% vectors_to_sum_1
-% vectors_to_sum_2
-% vectors_to_sum_3
-
-% SUMMING SUMMING SUMMING SUMMING SUMMING SUMMING
-vectors = zeros(3,3);
-sums = zeros(1,3);
-for i = 1:length(vectors_to_sum_1(:,1))
-    for k = 1:3
-        sums(1,k) = sums(1,k) + vectors_to_sum_1(i,k);
-    end
-end
-vectors(1,:) = sums(1,:)/length(vectors_to_sum_1(:,1));
-
-sums = zeros(1,3);
-for i = 1:length(vectors_to_sum_2(:,1))
-    for k = 1:3
-        sums(1,k) = sums(1,k) + vectors_to_sum_2(i,k);
-    end
-end
-vectors(2,:) = sums(1,:)/length(vectors_to_sum_2(:,1));
-
-sums = zeros(1,3);
-for i = 1:length(vectors_to_sum_3(:,1))
-    for k = 1:3
-        sums(1,k) = sums(1,k) + vectors_to_sum_3(i,k);
-    end
-end
-vectors(3,:) = sums(1,:)/length(vectors_to_sum_3(:,1));
-% SUMMING SUMMING SUMMING SUMMING SUMMING SUMMING
+vectors = zeros(directions,3);
+vectors(1,:) = sum(vectors_to_sum_1)/length(vectors_to_sum_1(:,1));
+vectors(2,:) = sum(vectors_to_sum_2)/length(vectors_to_sum_2(:,1));
+vectors(3,:) = sum(vectors_to_sum_3)/length(vectors_to_sum_3(:,1));
 
 vectors
-
-
-
-
-% [i,width_2] = size(vector_count_2);
-%
-% m = 1;
-% n = 0;
-% for i = 1:leng_mid
-%     if vector_count_2(i,1) ~= 0
-%         for j = 1:width_2
-%             vector_count_2(m,j) = vector_count_2(i,j);
-%             if vector_count_2(i,j) ~= 0
-%                 n = n + 1;
-%             end
-%         end
-%         vector_match_2(m,1) = i;
-%         matches_2(i,1) = n;
-%         n = 0;
-%         m = m + 1;
-%     end
-% end
-%
-% matches_cut_2 = matches_2;
-% biggest_match_2 = max(matches_2);
-% cut_off_2 = 0.8*biggest_match;
-% for i = 1:length(matches_2);
-%     if matches_2(i,1) < cut_off_2
-%         matches_cut_2(i,1) = 0;
-%     end
-% end
-
-% m = 1;
-% for i = 1:length(matches_cut_2)
-%     if matches_cut_2(i,1) ~= 0
-%         main_vector_mid(m,:) = main_vector(i,:);
-%         m = m + 1;
-%     end
-% end
-
-
-
 
 for i = 1:length(main_vector(:,1))
     for j = 1:3
@@ -208,17 +141,26 @@ for i = 1:length(main_vector(:,1))
     end
 end
 
-for i = 1:3
+for i = 1:directions
     for j = 1:3
-        y(i,j) = vectors(i,j)*1.5;
+        z(i,j) = v(i,j)*1.5;
+    end
+end
+
+for i = 1:directions
+    for j = 1:3
+        y(i,j) = vectors(i,j)*1.75;
     end
 end
 
 mm = zeros(length(u(:,1)),1);
+ll = zeros(length(z(:,1)),1);
 nn = zeros(length(y(:,1)),1);
 
 quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
 quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
+
 grid on
 
 %
