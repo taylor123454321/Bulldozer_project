@@ -1,7 +1,8 @@
-function [vectors] = find_n(main_vector, directions, corr_value)
+function [vectors,m] = find_n(main_vector, directions, corr_value)
 % This function takes set of matching vectors and picks a set number of
 % independent vectors bassed on 'directions'
 
+check = 0;
 vectors = zeros(directions,3);
 vectors(1,:) = main_vector(1,:);
 m = 2;
@@ -17,5 +18,11 @@ for i = 1:length(main_vector(:,1))
     end
 end
 
+
 end
+
+
+
+
+
 
