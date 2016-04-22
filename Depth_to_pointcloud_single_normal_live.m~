@@ -34,20 +34,22 @@ end
 
 dImage_sum = uint16(zeros(424,512,taken-filter));
 pixel_count = zeros(424,512);
-dImage_filtered = uint16(zeros(424,512,taken-filter));
 
-for b = 1:taken-filter  % total elements to be summed
+for b = 1:(taken-filter)  % total elements to be summed
     start = b;
     finish = start + filter;
     for index = start:finish  % sum elements
         dImage_sum(:,:,b) = dImage_sum(:,:,b) + depthImage(:,:,index);
     end
-    for k = 1:filter
-        dImage_filtered(:,:,b) = dImage_sum(:,:,k)/pixel_count(:,:);
-    end
 end
 
+dImage_filtered = uint16(zeros(424,512,taken-filter));
 
+for b = 1:taken-filter
+    for k = 1:filter
+        dImage_filtered(:,:,b) = dImage_sum(:,:,k)/filter;
+    end
+end
 
 % for b = 1:taken-filter %trimming minium and maxium length
 %     for i = 1:424
