@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-load('A_for_trip_1.mat');
+load('A_for_trip_5.mat');
 tic
 
 leng = length(A);
@@ -57,11 +57,11 @@ end
 [leng_2,width] = size(vector_count_2);
 matches_cut = matches; % trimming the matches
 biggest_match = max(matches);
-directions = 3;
+directions = 2;
 matching = 4; % ratio
 corr_value = 0.5;
 
-cut_off = 0.3*biggest_match;
+cut_off = 0.4*biggest_match;
 % 0.75 depends on how many matches/vectors there are
 % cut of the amount of surface area covered with vectors wanting to read to
 % noise. A calculation for this is needed.
@@ -159,9 +159,9 @@ quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
 quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
 quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'blue');
 
-i = [1 0 0; 0 0 0; 0 0 0];
+% i = [1 0 0; 0 0 0; 0 0 0];
 
-quiver3(oo, oo, oo, i(:,1), i(:,2), i(:,3),'cyan');
+% quiver3(oo, oo, oo, i(:,1), i(:,2), i(:,3),'cyan');
 
 grid on
 
@@ -179,23 +179,23 @@ grid on
 % plot(f)
 
 
-x = rotx(30);
-y = roty(30);
-z = rotz(30);
-a = vectors(1,:);
-b = vectors(2,:);
-c = vectors(3,:);
+% x = rotx(30);
+% y = roty(30);
+% z = rotz(30);
+% a = vectors(1,:);
+% b = vectors(2,:);
+% c = vectors(3,:);
+% 
+% a = a*x *3;
+% b = b*x *3;
+% c = c*x *3;
+% quiver3(0,0,0,a(1),a(2),a(3), 'black');
+% quiver3(0,0,0,b(1),b(2),b(3), 'black');
+% quiver3(0,0,0,c(1),c(2),c(3), 'black');
+% 
 
-a = a*x *3;
-b = b*x *3;
-c = c*x *3;
-quiver3(0,0,0,a(1),a(2),a(3), 'black');
-quiver3(0,0,0,b(1),b(2),b(3), 'black');
-quiver3(0,0,0,c(1),c(2),c(3), 'black');
 
-
-
-
+save('vectors_to_compare_5','vectors')
 
 
 
