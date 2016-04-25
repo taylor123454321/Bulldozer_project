@@ -1,7 +1,11 @@
 clear; clc; close all;
 
-load('A_for_trip_1.mat');
+load('A_for_trip_2.mat');
 tic
+
+frames = 5;
+max_matches = 500;
+vector_time = zeros(max_matches,frames);
 
 leng = length(A);
 
@@ -61,7 +65,7 @@ directions = 3;
 matching = 4; % ratio
 corr_value = 0.5;
 
-cut_off = 0.3*biggest_match;
+cut_off = 0.75*biggest_match;
 % 0.75 depends on how many matches/vectors there are
 % cut of the amount of surface area covered with vectors wanting to read to
 % noise. A calculation for this is needed.
@@ -80,15 +84,15 @@ for i = 1:length(matches_cut)
 end
 
 count = zeros(1,length(main_vector(:,1)));
-[vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
-v = vectors_from_matches;
+[vectors,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+v = vectors;
 leng_mid = length(main_vector);
 vectors_to_sum = zeros(1,3,directions);
 correrlation = zeros(1,3);
 
 for i = 1:leng_mid % searching for matching vectors based on correclation
     for j = 1:directions
-        correrlation(j) = corr(vectors_from_matches(j,:)',main_vector(i,:)');
+        correrlation(j) = corr(vectors(j,:)',main_vector(i,:)');
     end
     [k,corr_max] = max(correrlation);
     vectors_to_sum(i,:,corr_max) = main_vector(i,:);
@@ -96,31 +100,25 @@ end
 vectors_to_sum;
 
 % averaging the matches around the independent vectors
-vectors_from_matches = zeros(directions,3);
+vectors = zeros(directions,3);
 for i = 1:directions
     sums = remove_zeros(vectors_to_sum(:,:,i));
-    vectors_from_matches(i,:) = sum(sums)/length(sums(:,1));
+    vectors(i,:) = sum(sums)/length(sums(:,1));
 end
 
-vectors_from_matches;
+vectors
 
-match_angle = 10;
 m = 1;
-for i = 1:directions %takes the best fitting vectors and finds vectors around it from orginal data then averages them
+for i = 1:directions
     for j = 1:leng
-        if acosd(dot(A(j,:),vectors_from_matches(i,:))/(norm(A(j,:))*norm(vectors_from_matches(i,:)))) < match_angle 
-            vectors_to_average(m,:,i) = A(j,:);
+        if acosd(dot(A(j,:),vectors(i,:))/(norm(A(j,:))*norm(vectors(i,:)))) < match_angle 
+            vectors_to_average(m,:) = A(j,:);
             m = m + 1;
         end
     end
 end
 
-for i = 1:directions
-    sums = remove_zeros(vectors_to_average(:,:,i));
-    vectors(i,:) = sum(sums)/length(sums(:,1));
-end
-
-vectors
+for i = 1:direction
 
 toc
 
@@ -137,12 +135,7 @@ for i = 1:directions
 end
 for i = 1:directions
     for j = 1:3
-        y(i,j) = vectors_from_matches(i,j)*1.75;
-    end
-end
-for i = 1:directions
-    for j = 1:3
-        w(i,j) = vectors(i,j)*2.2;
+        y(i,j) = vectors(i,j)*1.75;
     end
 end
 
@@ -152,16 +145,10 @@ quiver3(xx, yy, zz, uu, vv, ww);
 mm = zeros(length(u(:,1)),1);
 ll = zeros(length(z(:,1)),1);
 nn = zeros(length(y(:,1)),1);
-oo = zeros(length(w(:,1)),1);
 
 quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
 quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
 quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
-quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'blue');
-
-i = [1 0 0; 0 0 0; 0 0 0];
-
-quiver3(oo, oo, oo, i(:,1), i(:,2), i(:,3),'cyan');
 
 grid on
 
@@ -179,19 +166,9 @@ grid on
 % plot(f)
 
 
-x = rotx(30);
-y = roty(30);
-z = rotz(30);
-a = vectors(1,:);
-b = vectors(2,:);
-c = vectors(3,:);
 
-a = a*x *3;
-b = b*x *3;
-c = c*x *3;
-quiver3(0,0,0,a(1),a(2),a(3), 'black');
-quiver3(0,0,0,b(1),b(2),b(3), 'black');
-quiver3(0,0,0,c(1),c(2),c(3), 'black');
+
+
 
 
 
