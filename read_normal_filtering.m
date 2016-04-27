@@ -108,7 +108,7 @@ match_angle = 10;
 m = 1;
 for i = 1:directions %takes the best fitting vectors and finds vectors around it from orginal data then averages them
     for j = 1:leng
-        if acosd(dot(A(j,:),vectors_from_matches(i,:))/(norm(A(j,:))*norm(vectors_from_matches(i,:)))) < match_angle 
+        if angle_betweend(A(j,:),vectors_from_matches(i,:)) < match_angle 
             vectors_to_average(m,:,i) = A(j,:);
             m = m + 1;
         end
@@ -195,7 +195,7 @@ grid on
 % 
 
 
-save('vectors_to_compare_5','vectors')
+% save('vectors_to_compare_5','vectors')
 
 
 
