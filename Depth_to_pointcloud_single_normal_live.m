@@ -7,62 +7,58 @@ step(depthDevice);
 for i = 1:20
     depthImage = step(depthDevice);
 end
-
+tic
 taken = 31;
-filter = 5;
+filter = 6;
 
+clear('depthImage')
 for i = 1:taken
     image = step(depthDevice);
-    image(image<800) = 0; %trimming minium and maxium length
-    image(image>1050) = 0;
+%     image(image<800) = 0; %trimming minium and maxium length
+    image(image>800) = 0;
     image(:,1:20) = 0;
     image(:,424-20:424) = 0;
     image(1:20,:) = 0;
-    image(512-20:512,:) = 0;
+    image(:,512-20:512) = 0;
     depthImage(:,:,i) = image;
 end
 
-% for i = 1:424
-%     for j = 1:512
-%         for b = 1:taken
-%             if depthImage(i,j,b) == 0;
-%                 depthImage(i,j,:) = 0;
-%             end
-%         end
-%     end
-% end
 
-dImage_sum = uint16(zeros(424,512,taken-filter));
-pixel_count = zeros(424,512);
+sum_ = uint16(zeros(424,512));
+elements = uint16(zeros(424,512));
 dImage_filtered = uint16(zeros(424,512,taken-filter));
 
-for b = 1:taken-filter  % total elements to be summed
-    start = b;
-    finish = start + filter;
-    for index = start:finish  % sum elements
-        dImage_sum(:,:,b) = dImage_sum(:,:,b) + depthImage(:,:,index);
-    end
-    for k = 1:filter
-        dImage_filtered(:,:,b) = dImage_sum(:,:,k)/pixel_count(:,:);
+for b = 1:filter
+    sum_(:,:) = sum_(:,:) + depthImage(:,:,b);
+    for i = 1:424
+        for j = 1:512
+            if depthImage(i,j,b) ~= 0
+                elements(i,j) = elements(i,j) + 1;
+            end
+        end
     end
 end
 
+for b = filter+1:taken
+    
+    sum_(:,:) = sum_(:,:) - depthImage(:,:,b-filter) + depthImage(:,:,b);
+    for i = 1:424
+        for j = 1:512
+            if depthImage(i,j,b-filter) ~= 0
+                elements(i,j) = elements(i,j) - 1;
+            end
+            if depthImage(i,j,b) ~= 0
+                elements(i,j) = elements(i,j) + 1;
+            end
+        end
+    end
+    dImage_filtered(:,:,b) = sum_(:,:)./elements(:,:);
+end
 
+toc
+% release(depthDevice);
 
-% for b = 1:taken-filter %trimming minium and maxium length
-%     for i = 1:424
-%         for j = 1:512
-%             if dImage_filtered(i,j,b) > 1300
-%                 dImage_filtered(i,j,b) = 0;
-%             end
-%             if dImage_filtered(i,j,b) < 800
-%                 dImage_filtered(i,j,b) = 0;
-%             end
-%         end
-%     end
-% end
-
-frames = 5
+frames = 8
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
 
@@ -129,34 +125,24 @@ for p = 1:frames
         end
     end
     
-    AA(:,:,p) = A;
+%     AA(:,:,p) = A;
     
     leng = length(A);
     
     uu = A(:,1);
     vv = A(:,2);
     ww = A(:,3);
-    %         xx = F(:,1);
-    %         yy = F(:,2);
-    %         zz = F(:,3);
-    xx = zeros(leng,1);
-    yy = zeros(leng,1);
-    zz = zeros(leng,1);
+            xx = F(:,1);
+            yy = F(:,2);
+            zz = F(:,3);
+%     xx = zeros(leng,1);
+%     yy = zeros(leng,1);
+%     zz = zeros(leng,1);
     
     
     pcshow(ptCloud)
     hold on
     quiver3(xx, yy, zz, uu, vv, ww);
-    
-    theta_C = zeros(1,leng);
-    theta_D = zeros(1,leng);
-    theta_E = zeros(1,leng);
-    
-    %     for i = 1:leng
-    %         theta_C(i) = atan(A(i,1)/A(i,2));
-    %         theta_D(i) = atan(A(i,2)/A(i,3));
-    %         theta_E(i) = atan(A(i,1)/A(i,3));
-    %     end
     
     vector_count = zeros(leng,1);
     trim_1 = 0.015;
@@ -204,23 +190,7 @@ for p = 1:frames
     m = 1;
     vector = zeros(1,5);
     
-    %     for i = 1:leng_2
-    %         if vector_count_2(i,width) ~= 0
-    %             main_vector_p(m,:) = A(vector_match(i,1),:);
-    %             vector(1) = i;
-    %             m = m + 1;
-    %         end
-    %         if vector_count_2(i,width-1) ~= 0 && vector(1) ~= i
-    %             main_vector_p(m,:) = A(vector_match(i,1),:);
-    %             vector(2) = i;
-    %             m = m + 1;
-    %         end
-    %         if vector_count_2(i,width-2) ~= 0 && vector(1) ~= i  && vector(2) ~= i
-    %             main_vector_p(m,:) = A(vector_match(i,1),:);
-    %             m = m + 1;
-    %         end
-    %     end
-    
+
     biggest_match = max(matches);
     cut_off = round(0.7*biggest_match);
     for i = 1:length(matches);
@@ -300,17 +270,17 @@ release(depthDevice);
 % quiver3(xxx, yyy, zzz, A_(:,1), A_(:,3), A_(:,2));
 
 % grid on
-u = main_vector_p
-for i = 1:length(main_vector_p(:,1))
-    for j = 1:3
-        main_vector_p(i,j) = main_vector_p(i,j)*1.5;
-    end
-end
-
-
-mm = zeros(length(main_vector_p(:,1)),1);
-
-quiver3(mm, mm, mm, main_vector_p(:,1), main_vector_p(:,2), main_vector_p(:,3),'black');
+% % u = main_vector_p
+% % for i = 1:length(main_vector_p(:,1))
+% %     for j = 1:3
+% %         main_vector_p(i,j) = main_vector_p(i,j)*1.5;
+% %     end
+% % end
+% % 
+% % 
+% % mm = zeros(length(main_vector_p(:,1)),1);
+% % 
+% % quiver3(mm, mm, mm, main_vector_p(:,1), main_vector_p(:,2), main_vector_p(:,3),'black');
 
 % hold off
 % plot(matches)

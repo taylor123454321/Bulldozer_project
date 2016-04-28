@@ -23,16 +23,8 @@ zlabel(player.Axes,'Z (m)');
 for i = 1:500
     %colorImage = step(colorDevice);
     depthImage = step(depthDevice);
-    for i = 1:424;
-        for j = 1:512;
-            if depthImage(i,j) > 2000
-                depthImage(i,j) = 0;
-            end
-            if depthImage(i,j) < 800
-                depthImage(i,j) = 0;
-            end
-        end
-    end
+%     depthImage(depthImage<800) = 0; %trimming minium and maxium length
+    depthImage(depthImage>800) = 0;
     ptCloud = pcfromkinect(depthDevice,depthImage);
 
     view(player,ptCloud);
