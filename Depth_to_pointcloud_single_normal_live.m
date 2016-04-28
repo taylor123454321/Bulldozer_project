@@ -14,7 +14,7 @@ filter = 6;
 clear('depthImage')
 for i = 1:taken
     image = step(depthDevice);
-%     image(image<800) = 0; %trimming minium and maxium length
+    %     image(image<600) = 0; %trimming minium and maxium length
     image(image>800) = 0;
     image(:,1:20) = 0;
     image(:,424-20:424) = 0;
@@ -40,7 +40,6 @@ for b = 1:filter
 end
 
 for b = filter+1:taken
-    
     sum_(:,:) = sum_(:,:) - depthImage(:,:,b-filter) + depthImage(:,:,b);
     for i = 1:424
         for j = 1:512
@@ -52,13 +51,14 @@ for b = filter+1:taken
             end
         end
     end
-    dImage_filtered(:,:,b) = sum_(:,:)./elements(:,:);
+    dImage_filtered(:,:,b-filter) = sum_(:,:)./elements(:,:);
 end
+ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,1));
+pcshow(ptCloud)
+release(depthDevice);
 
 toc
-% release(depthDevice);
-
-frames = 8
+frames = 5
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
 
@@ -96,15 +96,8 @@ for p = 1:frames
     %         end
     %     end
     
-    %pcshow(ptCloud)
-    %title('Adjusted Normals of Point Cloud')
-    %hold on
-    %quiver3(xx, yy, zz, u, v, w);
-    %surf(xx,yy,zz)
-    %view(0,-45)
-    
-    A = zeros(30,3);
-    F = zeros(30,3);
+    A = zeros(20,3);
+    F = zeros(20,3);
     
     k = 1;
     for i = 1:43
@@ -125,27 +118,21 @@ for p = 1:frames
         end
     end
     
-%     AA(:,:,p) = A;
-    
-    leng = length(A);
-    
+    %     AA(:,:,p) = A;
     uu = A(:,1);
     vv = A(:,2);
     ww = A(:,3);
-            xx = F(:,1);
-            yy = F(:,2);
-            zz = F(:,3);
-%     xx = zeros(leng,1);
-%     yy = zeros(leng,1);
-%     zz = zeros(leng,1);
-    
+    leng = length(A);
+    xx = zeros(leng,1);
+    yy = zeros(leng,1);
+    zz = zeros(leng,1);
     
     pcshow(ptCloud)
     hold on
     quiver3(xx, yy, zz, uu, vv, ww);
     
     vector_count = zeros(leng,1);
-    trim_1 = 0.015;
+    trim_1 = 0.06;
     trim_2 = trim_1;
     trim_3 = trim_2;
     m = 1;
@@ -170,7 +157,8 @@ for p = 1:frames
     
     m = 1;
     n = 0;
-    for i = 1:leng
+    matches = zeros(leng,1);
+    for i = 1:leng % clearing zero lines
         if vector_count(i,1) ~= 0
             for j = 1:width
                 vector_count_2(m,j) = vector_count(i,j);
@@ -186,86 +174,74 @@ for p = 1:frames
     end
     
     [leng_2,width] = size(vector_count_2);
-    
-    m = 1;
-    vector = zeros(1,5);
-    
-
+    matches_cut = matches; % trimming the matches
     biggest_match = max(matches);
-    cut_off = round(0.7*biggest_match);
+    directions = 2;
+    matching = 4; % ratio
+    corr_value = 0.5;
+    
+    cut_off = 0.2*biggest_match;
+    % 0.75 depends on how many matches/vectors there are
+    % cut of the amount of surface area covered with vectors wanting to read to
+    % noise. A calculation for this is needed.
     for i = 1:length(matches);
         if matches(i,1) < cut_off
-            matches(i,1) = 0;
+            matches_cut(i,1) = 0;
         end
     end
     
     m = 1;
-    for i = 1:length(matches)
-        if matches(i,1) ~= 0
-            main_vector_p(m,:) = A(i,:);
+    for i = 1:length(matches_cut)
+        if matches_cut(i,1) ~= 0
+            main_vector(m,:) = A(i,:);
             m = m + 1;
         end
     end
+    
+    count = zeros(1,length(main_vector(:,1)));
+    [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+    v = vectors_from_matches;
+    leng_mid = length(main_vector);
+    vectors_to_sum = zeros(1,3,directions);
+    correrlation = zeros(1,3);
+    
+    for i = 1:leng_mid % searching for matching vectors based on correclation
+        for j = 1:directions
+            correrlation(j) = corr(vectors_from_matches(j,:)',main_vector(i,:)');
+        end
+        [k,corr_max] = max(correrlation);
+        vectors_to_sum(i,:,corr_max) = main_vector(i,:);
+    end
+    vectors_to_sum;
+    
+    % averaging the matches around the independent vectors
+    vectors_from_matches = zeros(directions,3);
+    for i = 1:directions
+        sums = remove_zeros(vectors_to_sum(:,:,i));
+        vectors_from_matches(i,:) = sum(sums)/length(sums(:,1));
+    end
+    
+    vectors_from_matches
+    
+    match_angle = 10;
+    m = 1;
+    for i = 1:directions %takes the best fitting vectors and finds vectors around it from orginal data then averages them
+        for j = 1:leng
+            if angle_betweend(A(j,:),vectors_from_matches(i,:)) < match_angle
+                vectors_to_average(m,:,i) = A(j,:);
+                m = m + 1;
+            end
+        end
+    end
+    
+    for i = 1:directions
+        sums = remove_zeros(vectors_to_average(:,:,i));
+        vectors(i,:) = sum(sums)/length(sums(:,1));
+    end
+    vectors
 end
 release(depthDevice);
 
-% total = zeros(1,frames);
-%
-% for i = 1:frames
-%     for j = 1:max_matches
-%         total(i) = total(i) + vector_time(j,i);
-%         if vector_time(j,i)
-%             break
-%         end
-%     end
-%     vector_avg(i) = total(i)/j;
-% end
-%
-% vector_avg
-% mean(vector_avg)
-
-% k = 1;
-% for i = 1:leng
-%     if isnan(vector_count(i,1)) || isnan(vector_count(i,2)) || isnan(vector_count(i,3))
-%         A_(k,:) = A(i,:);
-%         k = k + 1;
-%     end
-% end
-% xxx = zeros(k-1,1);
-% yyy = zeros(k-1,1);
-% zzz = zeros(k-1,1);
-
-% close all
-
-
-
-% scatter(1:leng,vector_count(:,1))
-% hold on
-% scatter(1:leng,vector_count(:,2))
-% hold on
-% scatter(1:leng,vector_count(:,3))
-
-% plot(vector_count(:,1))
-% hold on
-% plot(vector_count(:,2))
-% hold on
-% plot(vector_count(:,3))
-
-% for i = 1:frames
-%     hold on
-%     scatter(1:max_matches,vector_time(:,i))
-% end
-
-% for i = 1:frames
-%     hold on
-%     scatter3(ones(1,max_matches)*i,1:max_matches,vector_time(:,i))
-% end
-
-
-% for i = 1:frames
-%     hold on
-%     plot(vector_time(:,i))
-% end
 
 % quiver3(xxx, yyy, zzz, A_(:,1), A_(:,3), A_(:,2));
 
@@ -276,10 +252,10 @@ release(depthDevice);
 % %         main_vector_p(i,j) = main_vector_p(i,j)*1.5;
 % %     end
 % % end
-% % 
-% % 
+% %
+% %
 % % mm = zeros(length(main_vector_p(:,1)),1);
-% % 
+% %
 % % quiver3(mm, mm, mm, main_vector_p(:,1), main_vector_p(:,2), main_vector_p(:,3),'black');
 
 % hold off
@@ -288,4 +264,37 @@ release(depthDevice);
 %
 % vector_count_2
 
+for i = 1:length(main_vector(:,1))
+    for j = 1:3
+        u(i,j) = main_vector(i,j)*1.25;
+    end
+end
+for i = 1:directions
+    for j = 1:3
+        z(i,j) = v(i,j)*1.5;
+    end
+end
+for i = 1:directions
+    for j = 1:3
+        y(i,j) = vectors_from_matches(i,j)*1.75;
+    end
+end
+for i = 1:directions
+    for j = 1:3
+        w(i,j) = vectors(i,j)*2.2;
+    end
+end
+
+hold on
+quiver3(xx, yy, zz, uu, vv, ww);
+
+mm = zeros(length(u(:,1)),1);
+ll = zeros(length(z(:,1)),1);
+nn = zeros(length(y(:,1)),1);
+oo = zeros(length(w(:,1)),1);
+
+quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
+quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
+quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'blue');
 
