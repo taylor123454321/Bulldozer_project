@@ -9,7 +9,7 @@ for i = 1:20
 end
 tic
 taken = 31;
-filter = 6;
+filter = 15;
 
 clear('depthImage')
 for i = 1:taken
@@ -58,7 +58,7 @@ pcshow(ptCloud)
 release(depthDevice);
 
 toc
-frames = 5
+frames = 1
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
 
@@ -176,7 +176,7 @@ for p = 1:frames
     [leng_2,width] = size(vector_count_2);
     matches_cut = matches; % trimming the matches
     biggest_match = max(matches);
-    directions = 2;
+    directions = 3;
     matching = 4; % ratio
     corr_value = 0.5;
     
@@ -298,3 +298,8 @@ quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
 quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
 quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'blue');
 
+vectors_2 = vectors;
+load('vectors_to_compare_1')
+vectors_1 = vectors;
+
+rotation = angle_betweend(vectors_1,vectors_2)
