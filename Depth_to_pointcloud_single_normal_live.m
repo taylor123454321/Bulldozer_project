@@ -61,6 +61,7 @@ toc
 frames = 1
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
+vectors = 0;
 
 for p = 1:frames
     ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,p));
@@ -87,15 +88,7 @@ for p = 1:frames
         end
     end
     
-    xx = x;yy = y;zz = z;
-    %     for i = 1:43
-    %         for j = 1:52
-    %             xx(i,j) = 0;
-    %             yy(i,j) = 0;
-    %             zz(i,j) = 0;
-    %         end
-    %     end
-    
+    %     xx = x;yy = y;zz = z;
     A = zeros(20,3);
     F = zeros(20,3);
     
@@ -131,114 +124,121 @@ for p = 1:frames
     hold on
     quiver3(xx, yy, zz, uu, vv, ww);
     
-    vector_count = zeros(leng,1);
-    trim_1 = 0.06;
-    trim_2 = trim_1;
-    trim_3 = trim_2;
-    m = 1;
+    main_vector = 0;
+    v = 0;
+    vectors_from_matches = 0;
     
-    for i = 1:leng % searching for matching vectors based on angle
-        for j = 1:leng
-            if A(j,1) > (A(i,1)-trim_1) && A(j,1) < (A(i,1)+trim_1)
-                if A(j,2) > (A(i,2)-trim_2) && A(j,2) < (A(i,2)+trim_2)
-                    if A(j,3) > (A(i,3)-trim_3) && A(j,3) < (A(i,3)+trim_3)
-                        if i ~= j
-                            vector_count(i,m) = j;
-                            m = m + 1;
+    if leng > 20
+        vector_count = zeros(leng,1);
+        trim_1 = 0.06;
+        trim_2 = trim_1;
+        trim_3 = trim_2;
+        m = 1;
+        
+        for i = 1:leng % searching for matching vectors based on angle
+            for j = 1:leng
+                if A(j,1) > (A(i,1)-trim_1) && A(j,1) < (A(i,1)+trim_1)
+                    if A(j,2) > (A(i,2)-trim_2) && A(j,2) < (A(i,2)+trim_2)
+                        if A(j,3) > (A(i,3)-trim_3) && A(j,3) < (A(i,3)+trim_3)
+                            if i ~= j
+                                vector_count(i,m) = j;
+                                m = m + 1;
+                            end
                         end
                     end
                 end
             end
+            m = 1;
         end
+        
+        [i,width] = size(vector_count);
+        
         m = 1;
-    end
-    
-    [i,width] = size(vector_count);
-    
-    m = 1;
-    n = 0;
-    matches = zeros(leng,1);
-    for i = 1:leng % clearing zero lines
-        if vector_count(i,1) ~= 0
-            for j = 1:width
-                vector_count_2(m,j) = vector_count(i,j);
-                if vector_count(i,j) ~= 0
-                    n = n + 1;
+        n = 0;
+        matches = zeros(leng,1);
+        for i = 1:leng % clearing zero lines
+            if vector_count(i,1) ~= 0
+                for j = 1:width
+                    vector_count_2(m,j) = vector_count(i,j);
+                    if vector_count(i,j) ~= 0
+                        n = n + 1;
+                    end
                 end
-            end
-            vector_match(m,1) = i;
-            matches(i,1) = n;
-            n = 0;
-            m = m + 1;
-        end
-    end
-    
-    [leng_2,width] = size(vector_count_2);
-    matches_cut = matches; % trimming the matches
-    biggest_match = max(matches);
-    directions = 3;
-    matching = 4; % ratio
-    corr_value = 0.5;
-    
-    cut_off = 0.2*biggest_match;
-    % 0.75 depends on how many matches/vectors there are
-    % cut of the amount of surface area covered with vectors wanting to read to
-    % noise. A calculation for this is needed.
-    for i = 1:length(matches);
-        if matches(i,1) < cut_off
-            matches_cut(i,1) = 0;
-        end
-    end
-    
-    m = 1;
-    for i = 1:length(matches_cut)
-        if matches_cut(i,1) ~= 0
-            main_vector(m,:) = A(i,:);
-            m = m + 1;
-        end
-    end
-    
-    count = zeros(1,length(main_vector(:,1)));
-    [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
-    v = vectors_from_matches;
-    leng_mid = length(main_vector);
-    vectors_to_sum = zeros(1,3,directions);
-    correrlation = zeros(1,3);
-    
-    for i = 1:leng_mid % searching for matching vectors based on correclation
-        for j = 1:directions
-            correrlation(j) = corr(vectors_from_matches(j,:)',main_vector(i,:)');
-        end
-        [k,corr_max] = max(correrlation);
-        vectors_to_sum(i,:,corr_max) = main_vector(i,:);
-    end
-    vectors_to_sum;
-    
-    % averaging the matches around the independent vectors
-    vectors_from_matches = zeros(directions,3);
-    for i = 1:directions
-        sums = remove_zeros(vectors_to_sum(:,:,i));
-        vectors_from_matches(i,:) = sum(sums)/length(sums(:,1));
-    end
-    
-    vectors_from_matches
-    
-    match_angle = 10;
-    m = 1;
-    for i = 1:directions %takes the best fitting vectors and finds vectors around it from orginal data then averages them
-        for j = 1:leng
-            if angle_betweend(A(j,:),vectors_from_matches(i,:)) < match_angle
-                vectors_to_average(m,:,i) = A(j,:);
+                vector_match(m,1) = i;
+                matches(i,1) = n;
+                n = 0;
                 m = m + 1;
             end
         end
+        
+        [leng_2,width] = size(vector_count_2);
+        matches_cut = matches; % trimming the matches
+        biggest_match = max(matches);
+        directions = 3;
+        matching = 4; % ratio
+        corr_value = 0.5;
+        
+        cut_off = 0.2*biggest_match;
+        % 0.75 depends on how many matches/vectors there are
+        % cut of the amount of surface area covered with vectors wanting to read to
+        % noise. A calculation for this is needed.
+        for i = 1:length(matches);
+            if matches(i,1) < cut_off
+                matches_cut(i,1) = 0;
+            end
+        end
+        
+        m = 1;
+        for i = 1:length(matches_cut)
+            if matches_cut(i,1) ~= 0
+                main_vector(m,:) = A(i,:);
+                m = m + 1;
+            end
+        end
+        
+        if main_vector ~= 0
+            count = zeros(1,length(main_vector(:,1)));
+            [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+            v = vectors_from_matches;
+            leng_mid = length(main_vector);
+            vectors_to_sum = zeros(1,3,directions);
+            correrlation = zeros(1,3);
+            
+            for i = 1:leng_mid % searching for matching vectors based on correclation
+                for j = 1:directions
+                    correrlation(j) = corr(vectors_from_matches(j,:)',main_vector(i,:)');
+                end
+                [k,corr_max] = max(correrlation);
+                vectors_to_sum(i,:,corr_max) = main_vector(i,:);
+            end
+            vectors_to_sum;
+            
+            % averaging the matches around the independent vectors
+            vectors_from_matches = zeros(directions,3);
+            for i = 1:directions
+                sums = remove_zeros(vectors_to_sum(:,:,i));
+                vectors_from_matches(i,:) = sum(sums)/length(sums(:,1));
+            end
+            vectors_from_matches
+            
+            match_angle = 10;
+            m = 1;
+            for i = 1:directions %takes the best fitting vectors and finds vectors around it from orginal data then averages them
+                for j = 1:leng
+                    if angle_betweend(A(j,:),vectors_from_matches(i,:)) < match_angle
+                        vectors_to_average(m,:,i) = A(j,:);
+                        m = m + 1;
+                    end
+                end
+            end
+            
+            for i = 1:directions
+                sums = remove_zeros(vectors_to_average(:,:,i));
+                vectors(i,:) = sum(sums)/length(sums(:,1));
+            end
+            vectors
+        end
     end
-    
-    for i = 1:directions
-        sums = remove_zeros(vectors_to_average(:,:,i));
-        vectors(i,:) = sum(sums)/length(sums(:,1));
-    end
-    vectors
 end
 release(depthDevice);
 
@@ -303,3 +303,14 @@ load('vectors_to_compare_1')
 vectors_1 = vectors;
 
 rotation = angle_betweend(vectors_1,vectors_2)
+
+
+
+
+
+
+
+
+
+
+
