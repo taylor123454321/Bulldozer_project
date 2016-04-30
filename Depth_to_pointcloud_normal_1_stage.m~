@@ -248,7 +248,7 @@ for p = filter+1:frames
                 [k,corr_max] = max(correrlation);
                 vectors_to_sum(i,:,corr_max) = main_vector(i,:);
             end
-            toc,10
+            toc
             tic
             % averaging the matches around the independent vectors
             vectors_from_matches = zeros(directions,3);
@@ -266,7 +266,7 @@ for p = filter+1:frames
                     end
                 end
             end
-            toc,11
+            toc
             tic
             clear('vectors')
             vectors = [0 0 0];
@@ -305,7 +305,7 @@ for p = filter+1:frames
             end
             angles(:,:,p) = min(angle);
             angles(:,:,p)
-            toc,12
+            toc
 %             
 %             for i = 1:directions
 %                 for j = 1:3
