@@ -2,6 +2,8 @@ clear, clc, close all
 
 depthDevice = imaq.VideoDevice('kinect',2);
 load('base_vector')
+vector_base = vector_total;
+clear('vector_total')
 
 step(depthDevice);
 
@@ -54,14 +56,17 @@ for b = filter+1:taken
     end
     dImage_filtered(:,:,b-filter) = sum_(:,:)./elements(:,:);
 end
-ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,1));
-pcshow(ptCloud)
-release(depthDevice);
+% ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,1));
+% pcshow(ptCloud)
+% release(depthDevice);
 
 toc
-frames = 5
+frames = 10
 directions = 3;
-vector_overall = zeros(directions,3,frames);
+filter_vector = 5;
+vectors_to_sum_overall = zeros(directions,3,filter_vector);
+vector_total = zeros(directions,3,frames);
+vector_overall = zeros(directions,3);
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
 
@@ -78,7 +83,7 @@ for p = 1:frames
     v = normals(1:10:end,1:10:end,2);
     w = normals(1:10:end,1:10:end,3);
     
-    sensorCenter = [0,-0.3,0.3];
+    sensorCenter = [0,0,0.3];
     for k = 1 : numel(x)
         p1 = sensorCenter - [x(k),y(k),z(k)];
         p2 = [u(k),v(k),w(k)];
@@ -203,7 +208,11 @@ for p = 1:frames
         
         if main_vector ~= 0
             count = zeros(1,length(main_vector(:,1)));
-            [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+            if p == 1
+                [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+            else
+                vectors_from_matches = vector_overall;
+            end
             v = vectors_from_matches;
             leng_mid = length(main_vector);
             vectors_to_sum = zeros(1,3,directions);
@@ -241,20 +250,70 @@ for p = 1:frames
                 sums = remove_zeros(vectors_to_average(:,:,i));
                 vectors(i,:) = sum(sums)/length(sums(:,1));
             end
+            if  length(vectors(:,1)) < directions
+                vectors(directions,:) = NaN;
+            end
+            
+            vector_total(:,:,p) = vectors;
+            filter_index = p-filter_vector:p;
+            %filter_vector_sum = filter_vector*ones(directions,3);
+            
+            for i = 1:filter_vector
+                if filter_index(i) < 1
+                    filter_index(i) = 1;
+                end
+            end
+            
+            for i = 1:filter_vector
+                vectors_to_sum_overall(:,:,i) = vector_total(:,:,filter_index(i));
+            end
+            
+            for i = 1:directions
+                for j = 1:3
+                    vector_overall(i,j) = sum(vectors_to_sum_overall(i,j,:),'omitnan')/filter_vector;
+                end
+            end
+            for i = 1:length(vector_overall(:,1))
+                for j = 1:length(vector_base(:,1))
+                    angle(i,j) = angle_betweend(vector_overall(i,:),vector_base(j,:));
+                end
+            end
+            angle
+            
+            toc
+            for i = 1:directions
+                for j = 1:3
+                    w(i,j) = vectors(i,j)*2;
+                end
+            end
+            %     for i = 1:length(main_vector(:,1))
+            %         for j = 1:3
+            %             u(i,j) = main_vector(i,j)*1.25;
+            %         end
+            %     end
+            %     for i = 1:directions
+            %         for j = 1:3
+            %             z(i,j) = v(i,j)*1.5;
+            %         end
+            %     end
+            %     for i = 1:directions
+            %         for j = 1:3
+            %             y(i,j) = vectors_from_matches(i,j)*1.75;
+            %         end
+            %     end
+            
+            mm = zeros(length(u(:,1)),1);
+            ll = zeros(length(z(:,1)),1);
+            nn = zeros(length(y(:,1)),1);
+            oo = zeros(length(w(:,1)),1);
+            
+            %     quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+            %     quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
+            %     quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
+            quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
+            
         end
     end
-    vector_overall(:,:,p) = vectors;
-    rotation = angle_betweend(vector_total,vectors)
-
-    toc
-    for i = 1:directions
-        for j = 1:3
-            w(i,j) = vectors(i,j)*2;
-        end
-    end
-    oo = zeros(length(w(:,1)),1);
-    quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
-    
 end
 
 release(depthDevice);
@@ -280,7 +339,7 @@ release(depthDevice);
 % matches
 %
 % vector_count_2
-% 
+%
 % for i = 1:length(main_vector(:,1))
 %     for j = 1:3
 %         u(i,j) = main_vector(i,j)*1.25;
@@ -296,24 +355,25 @@ release(depthDevice);
 %         y(i,j) = vectors_from_matches(i,j)*1.75;
 %     end
 % end
-% for i = 1:directions
-%     for j = 1:3
-%         w(i,j) = vectors(i,j)*2.2;
-%     end
-% end
-% 
+for i = 1:directions
+    for j = 1:3
+        w(i,j) = vector_overall(i,j)*3;
+    end
+end
+%
 % hold on
 % quiver3(xx, yy, zz, uu, vv, ww);
-% 
+%
 % mm = zeros(length(u(:,1)),1);
 % ll = zeros(length(z(:,1)),1);
 % nn = zeros(length(y(:,1)),1);
-% oo = zeros(length(w(:,1)),1);
-% 
+clear('oo')
+oo = zeros(length(w(:,1)),1);
+%
 % quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
 % quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
 % quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
-% quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'blue');
+quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'green');
 
 
 

@@ -1,18 +1,22 @@
 clear, clc, close all
 
 depthDevice = imaq.VideoDevice('kinect',2);
+load('base_vector')
+vector_base = vector_total;
+clear('vector_total')
 
 step(depthDevice);
 
-for i = 1:20
+for i = 1:30
     depthImage = step(depthDevice);
 end
+
 tic
-taken = 31;
-filter = 10;
+frames = 80;
+filter = 5;
 
 clear('depthImage')
-for i = 1:taken
+for i = 1:filter
     image = step(depthDevice);
     %     image(image<600) = 0; %trimming minium and maxium length
     image(image>800) = 0;
@@ -23,10 +27,9 @@ for i = 1:taken
     depthImage(:,:,i) = image;
 end
 
-
 sum_ = uint16(zeros(424,512));
 elements = uint16(zeros(424,512));
-dImage_filtered = uint16(zeros(424,512,taken-filter));
+dImage_filtered = uint16(zeros(424,512,frames-filter));
 
 for b = 1:filter
     sum_(:,:) = sum_(:,:) + depthImage(:,:,b);
@@ -39,33 +42,48 @@ for b = 1:filter
     end
 end
 
-for b = filter+1:taken
-    sum_(:,:) = sum_(:,:) - depthImage(:,:,b-filter) + depthImage(:,:,b);
-    for i = 1:424
-        for j = 1:512
-            if depthImage(i,j,b-filter) ~= 0
-                elements(i,j) = elements(i,j) - 1;
-            end
-            if depthImage(i,j,b) ~= 0
-                elements(i,j) = elements(i,j) + 1;
-            end
-        end
-    end
-    dImage_filtered(:,:,b-filter) = sum_(:,:)./elements(:,:);
-end
-ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,1));
-pcshow(ptCloud)
-release(depthDevice);
 
-toc
-frames = 5
+% ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,1));
+% pcshow(ptCloud)
+% release(depthDevice);
+
 directions = 3;
-vector_overall = zeros(directions,3,frames);
+filter_vector = 5;
+match_angle = 20;
+vectors_to_sum_overall = zeros(directions,3,filter_vector);
+vector_total = zeros(directions,3,frames);
+vector_overall = zeros(directions,3);
+angles = zeros(1,3,frames);
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
 
 
-for p = 1:frames
+for p = filter+1:frames
+    tic
+    clear('depthImage')
+    image = step(depthDevice);
+    %     image(image<600) = 0; %trimming minium and maxium length
+    image(image>800) = 0;
+    image(:,1:20) = 0;
+    image(:,424-20:424) = 0;
+    image(1:20,:) = 0;
+    image(:,512-20:512) = 0;
+    depthImage(:,:,p) = image;
+    
+    
+    sum_(:,:) = sum_(:,:) - depthImage(:,:,p-filter) + depthImage(:,:,p);
+    for i = 1:424
+        for j = 1:512
+            if depthImage(i,j,p-filter) ~= 0
+                elements(i,j) = elements(i,j) - 1;
+            end
+            if depthImage(i,j,p) ~= 0
+                elements(i,j) = elements(i,j) + 1;
+            end
+        end
+    end
+    dImage_filtered(:,:,p) = sum_(:,:)./elements(:,:);
+    
     ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,p));
     
     normals = pcnormals(ptCloud);
@@ -77,7 +95,7 @@ for p = 1:frames
     v = normals(1:10:end,1:10:end,2);
     w = normals(1:10:end,1:10:end,3);
     
-    sensorCenter = [0,-0.3,0.3];
+    sensorCenter = [0,0,0.3];
     for k = 1 : numel(x)
         p1 = sensorCenter - [x(k),y(k),z(k)];
         p2 = [u(k),v(k),w(k)];
@@ -90,6 +108,7 @@ for p = 1:frames
         end
     end
     
+    clear('A')
     %     xx = x;yy = y;zz = z;
     A = zeros(20,3);
     F = zeros(20,3);
@@ -103,9 +122,9 @@ for p = 1:frames
                         A(k,1) = u(i,j); % vectors that values
                         A(k,2) = v(i,j); % A point
                         A(k,3) = w(i,j); % F location
-                        F(k,1) = x(i,j);
-                        F(k,2) = y(i,j);
-                        F(k,3) = z(i,j);
+%                         F(k,1) = x(i,j);
+%                         F(k,2) = y(i,j);
+%                         F(k,3) = z(i,j);
                         k = k + 1;
                     end
                 end
@@ -122,11 +141,11 @@ for p = 1:frames
     yy = zeros(leng,1);
     zz = zeros(leng,1);
     
-    pcshow(ptCloud)
-    hold on
-    quiver3(xx, yy, zz, uu, vv, ww);
+%     pcshow(ptCloud)
+%     hold on
+%     quiver3(xx, yy, zz, uu, vv, ww);
     
-    tic
+    
     main_vector = 0;
     vectors = 0;
     v = 0;
@@ -202,7 +221,11 @@ for p = 1:frames
         
         if main_vector ~= 0
             count = zeros(1,length(main_vector(:,1)));
-            [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+            if p == filter+1
+                [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+            else
+                vectors_from_matches = vector_overall;
+            end
             v = vectors_from_matches;
             leng_mid = length(main_vector);
             vectors_to_sum = zeros(1,3,directions);
@@ -223,7 +246,6 @@ for p = 1:frames
                 vectors_from_matches(i,:) = sum(sums)/length(sums(:,1));
             end
             
-            match_angle = 10;
             m = 1;
             for i = 1:directions %takes the best fitting vectors and finds vectors around it from orginal data then averages them
                 for j = 1:leng
@@ -233,25 +255,80 @@ for p = 1:frames
                     end
                 end
             end
-            
+
             clear('vectors')
             vectors = [0 0 0];
-            for i = 1:length(vectors_to_average(:,:,)
+            for i = 1:length(vectors_to_average(1,1,:))
                 sums = remove_zeros(vectors_to_average(:,:,i));
                 vectors(i,:) = sum(sums)/length(sums(:,1));
             end
+            vectors;
+            if  length(vectors(:,1)) < directions
+                vectors(directions,:) = NaN;
+            end
+            
+            vector_total(:,:,p-1) = vectors;
+            filter_index = p-filter_vector:p;
+            
+            for i = 1:filter_vector
+                if filter_index(i) < 1
+                    filter_index(i) = 1;
+                end
+            end
+            
+            for i = 1:filter_vector
+                vectors_to_sum_overall(:,:,i) = vector_total(:,:,filter_index(i));
+            end
+            
+            for i = 1:directions
+                for j = 1:3
+                    vector_overall(i,j) = sum(vectors_to_sum_overall(i,j,:),'omitnan')/filter_vector;
+                end
+            end
+            
+            for i = 1:length(vector_overall(:,1))
+                for j = 1:length(vector_base(:,1))
+                    angle(i,j) = angle_betweend(vector_overall(i,:),vector_base(j,:));
+                end
+            end
+            angles(:,:,p) = min(angle);
+            angles(:,:,p)
+            
+%             
+%             for i = 1:directions
+%                 for j = 1:3
+%                     w(i,j) = vectors(i,j)*2;
+%                 end
+%             end
+            %     for i = 1:length(main_vector(:,1))
+            %         for j = 1:3
+            %             u(i,j) = main_vector(i,j)*1.25;
+            %         end
+            %     end
+            %     for i = 1:directions
+            %         for j = 1:3
+            %             z(i,j) = v(i,j)*1.5;
+            %         end
+            %     end
+            %     for i = 1:directions
+            %         for j = 1:3
+            %             y(i,j) = vectors_from_matches(i,j)*1.75;
+            %         end
+            %     end
+            
+%             mm = zeros(length(u(:,1)),1);
+%             ll = zeros(length(z(:,1)),1);
+%             nn = zeros(length(y(:,1)),1);
+%             oo = zeros(length(w(:,1)),1);
+            
+            %     quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+            %     quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
+            %     quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
+%             quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
+            
         end
     end
-    vector_overall(:,:,p) = vectors;
-    toc
-    for i = 1:directions
-        for j = 1:3
-            w(i,j) = vectors(i,j)*2;
-        end
-    end
-    oo = zeros(length(w(:,1)),1);
-    quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
-    
+    1/toc
 end
 
 release(depthDevice);
@@ -277,7 +354,7 @@ release(depthDevice);
 % matches
 %
 % vector_count_2
-% 
+%
 % for i = 1:length(main_vector(:,1))
 %     for j = 1:3
 %         u(i,j) = main_vector(i,j)*1.25;
@@ -293,33 +370,38 @@ release(depthDevice);
 %         y(i,j) = vectors_from_matches(i,j)*1.75;
 %     end
 % end
-% for i = 1:directions
-%     for j = 1:3
-%         w(i,j) = vectors(i,j)*2.2;
-%     end
-% end
-% 
+for i = 1:directions
+    for j = 1:3
+        w(i,j) = vector_overall(i,j)*3;
+    end
+end
+%
 % hold on
 % quiver3(xx, yy, zz, uu, vv, ww);
-% 
+%
 % mm = zeros(length(u(:,1)),1);
 % ll = zeros(length(z(:,1)),1);
 % nn = zeros(length(y(:,1)),1);
-% oo = zeros(length(w(:,1)),1);
-% 
+clear('oo')
+oo = zeros(length(w(:,1)),1);
+%
 % quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
 % quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
 % quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
-% quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'blue');
+quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'green');
 
-vectors_2 = vectors;
-load('vectors_to_compare_1')
-vectors_1 = vectors;
+for i = 1:length(angles(1,1,:))
+    a(i) = angles(1,1,i);
+    b(i) = angles(1,2,i);
+    c(i) = angles(1,3,i);
+end
 
-rotation = angle_betweend(vectors_1,vectors_2)
-
-
-
+figure
+plot(a)
+hold on
+plot(b)
+plot(c)
+grid on
 
 
 
