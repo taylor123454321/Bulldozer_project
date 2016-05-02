@@ -13,7 +13,7 @@ end
 
 tic
 frames = 80;
-filter = 5;
+filter = 4;
 
 clear('depthImage')
 for i = 1:filter
@@ -48,19 +48,30 @@ end
 % release(depthDevice);
 
 directions = 3;
-filter_vector = 5;
+filter_vector = 8;
+filter_angle = 2;
 match_angle = 20;
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
+angle_to_sum_overall = zeros(directions,directions,filter_angle);
 vector_total = zeros(directions,3,frames);
+angle_total = zeros(directions,directions,frames);
 vector_overall = zeros(directions,3);
-angles = zeros(1,3,frames);
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
+angle_ = zeros(directions,directions);
+angles = zeros(1,directions,frames);
+angle_overall = zeros(directions,directions);
+trim_1 = 0.125;
+trim_2 = trim_1;
+trim_3 = trim_2;
 
 
 for p = filter+1:frames
-    tic
+    p
     clear('depthImage')
+    for i = 1:3
+        depthImage = step(depthDevice);
+    end
     image = step(depthDevice);
     %     image(image<600) = 0; %trimming minium and maxium length
     image(image>800) = 0;
@@ -69,9 +80,7 @@ for p = filter+1:frames
     image(1:20,:) = 0;
     image(:,512-20:512) = 0;
     depthImage(:,:,p) = image;
-    toc,1
     
-    tic
     sum_(:,:) = sum_(:,:) - depthImage(:,:,p-filter) + depthImage(:,:,p);
     for i = 1:424
         for j = 1:512
@@ -84,15 +93,11 @@ for p = filter+1:frames
         end
     end
     dImage_filtered(:,:,p) = sum_(:,:)./elements(:,:);
-    toc,2
     
-    tic
     ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,p));
-    toc,3
-    tic
+    
     normals = pcnormals(ptCloud);
-    toc,4
-    tic
+    
     x = ptCloud.Location(1:10:end,1:10:end,1);
     y = ptCloud.Location(1:10:end,1:10:end,2);
     z = ptCloud.Location(1:10:end,1:10:end,3);
@@ -136,8 +141,7 @@ for p = filter+1:frames
             end
         end
     end
-    toc,5
-    tic
+
     %     AA(:,:,p) = A;
     uu = A(:,1);
     vv = A(:,2);
@@ -147,22 +151,19 @@ for p = filter+1:frames
     yy = zeros(leng,1);
     zz = zeros(leng,1);
     
-%     pcshow(ptCloud)
-%     hold on
+    if p == filter+1
+        pcshow(ptCloud)
+        hold on
+    end
 %     quiver3(xx, yy, zz, uu, vv, ww);
-    
     
     main_vector = 0;
     vectors = 0;
     v = 0;
     vectors_from_matches = 0;
-    toc,6
+
     if leng > 20
-        tic
         vector_count = zeros(leng,1);
-        trim_1 = 0.06;
-        trim_2 = trim_1;
-        trim_3 = trim_2;
         m = 1;
         
         for i = 1:leng % searching for matching vectors based on angle
@@ -180,8 +181,7 @@ for p = filter+1:frames
             end
             m = 1;
         end
-        toc,7
-        tic
+        
         [i,width] = size(vector_count);
         
         m = 1;
@@ -201,15 +201,14 @@ for p = filter+1:frames
                 m = m + 1;
             end
         end
-        toc,8
-        tic
+        
         [leng_2,width] = size(vector_count_2);
         matches_cut = matches; % trimming the matches
         biggest_match = max(matches);
         matching = 4; % ratio
         corr_value = 0.5;
         
-        cut_off = 0.2*biggest_match;
+        cut_off = 0.15*biggest_match;
         % 0.75 depends on how many matches/vectors there are
         % cut of the amount of surface area covered with vectors wanting to read to
         % noise. A calculation for this is needed.
@@ -227,11 +226,10 @@ for p = filter+1:frames
                 m = m + 1;
             end
         end
-        toc,9
+        
         if main_vector ~= 0
-            tic
             count = zeros(1,length(main_vector(:,1)));
-            if p == filter+1
+            if p == filter+1 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0
                 [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
             else
                 vectors_from_matches = vector_overall;
@@ -248,8 +246,7 @@ for p = filter+1:frames
                 [k,corr_max] = max(correrlation);
                 vectors_to_sum(i,:,corr_max) = main_vector(i,:);
             end
-            toc,10
-            tic
+            
             % averaging the matches around the independent vectors
             vectors_from_matches = zeros(directions,3);
             for i = 1:directions
@@ -266,8 +263,7 @@ for p = filter+1:frames
                     end
                 end
             end
-            toc,11
-            tic
+            
             clear('vectors')
             vectors = [0 0 0];
             for i = 1:length(vectors_to_average(1,1,:))
@@ -300,48 +296,69 @@ for p = filter+1:frames
             
             for i = 1:length(vector_overall(:,1))
                 for j = 1:length(vector_base(:,1))
-                    angle(i,j) = angle_betweend(vector_overall(i,:),vector_base(j,:));
+                    angle_(i,j) = angle_betweend(vector_overall(i,:),vector_base(j,:));
                 end
             end
-            angles(:,:,p) = min(angle);
+            
+            vector_total(:,:,p-1) = vector_overall;
+            
+            angle_total(:,:,p-1) = angle_;
+            angle_filter_index = p-filter_angle:p;
+            
+            for i = 1:filter_angle
+                if angle_filter_index(i) < 1
+                    angle_filter_index(i) = 1;
+                end
+            end
+            
+            for i = 1:filter_angle
+                angle_to_sum_overall(:,:,i) = angle_total(:,:,angle_filter_index(i));
+            end
+            
+            for i = 1:directions
+                for j = 1:directions
+                    angle_overall(i,j) = sum(angle_to_sum_overall(i,j,:),'omitnan')/filter_angle;
+                end
+            end
+            angle_total(:,:,p-1) = angle_overall;
+            angles(:,:,p) = min(angle_overall);
             angles(:,:,p)
-            toc,12
-%             
-%             for i = 1:directions
-%                 for j = 1:3
-%                     w(i,j) = vectors(i,j)*2;
-%                 end
-%             end
-            %     for i = 1:length(main_vector(:,1))
-            %         for j = 1:3
-            %             u(i,j) = main_vector(i,j)*1.25;
-            %         end
-            %     end
-            %     for i = 1:directions
-            %         for j = 1:3
-            %             z(i,j) = v(i,j)*1.5;
-            %         end
-            %     end
-            %     for i = 1:directions
-            %         for j = 1:3
-            %             y(i,j) = vectors_from_matches(i,j)*1.75;
-            %         end
-            %     end
             
-%             mm = zeros(length(u(:,1)),1);
-%             ll = zeros(length(z(:,1)),1);
-%             nn = zeros(length(y(:,1)),1);
-%             oo = zeros(length(w(:,1)),1);
+            for i = 1:directions
+                for j = 1:3
+                    w(i,j) = vectors(i,j)*2;
+                end
+            end
+            for i = 1:length(main_vector(:,1))
+                for j = 1:3
+                    u(i,j) = main_vector(i,j)*1.25;
+                end
+            end
+            for i = 1:directions
+                for j = 1:3
+                    z(i,j) = v(i,j)*1.5;
+                end
+            end
+            for i = 1:directions
+                for j = 1:3
+                    y(i,j) = vectors_from_matches(i,j)*1.75;
+                end
+            end
             
-            %     quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
-            %     quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
-            %     quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
-%             quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
+            mm = zeros(length(u(:,1)),1);
+            ll = zeros(length(z(:,1)),1);
+            nn = zeros(length(y(:,1)),1);
+            oo = zeros(length(w(:,1)),1);
+            
+            quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+            quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
+            quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
+            quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
             
         end
     end
 end
-
+pcshow(ptCloud)
 release(depthDevice);
 
 
@@ -401,7 +418,7 @@ oo = zeros(length(w(:,1)),1);
 % quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
 quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'green');
 
-for i = 1:length(angles(1,1,:))
+for i = 1:length(angles(1,3,:))
     a(i) = angles(1,1,i);
     b(i) = angles(1,2,i);
     c(i) = angles(1,3,i);
@@ -413,6 +430,7 @@ hold on
 plot(b)
 plot(c)
 grid on
+
 
 
 
