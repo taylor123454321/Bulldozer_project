@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-load('A_for_trip_5.mat');
+load('power_point.mat');
 tic
 
 leng = length(A);
@@ -57,7 +57,7 @@ end
 [leng_2,width] = size(vector_count_2);
 matches_cut = matches; % trimming the matches
 biggest_match = max(matches);
-directions = 2;
+directions = 3;
 matching = 4; % ratio
 corr_value = 0.5;
 

@@ -12,14 +12,14 @@ for i = 1:30
 end
 
 tic
-frames = 30;
+frames = 100;
 
 clear('depthImage')
 
 
 directions = 3;
-filter_vector = 1;
-filter_angle = 1;
+filter_vector = 4;
+filter_angle = 4;
 match_angle = 20;
 depthImage = zeros(424,512,frames);
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
@@ -37,7 +37,7 @@ trim_2 = trim_1;
 trim_3 = trim_2;
 
 
-for p = 1:frames
+for p = 2:frames
     p
     clear('depthImage')
     for i = 1:3
@@ -110,7 +110,7 @@ for p = 1:frames
     yy = zeros(leng,1);
     zz = zeros(leng,1);
     
-    if p == 1
+    if p == 2
         pcshow(ptCloud)
         hold on
     end
@@ -188,7 +188,7 @@ for p = 1:frames
         
         if main_vector ~= 0
             count = zeros(1,length(main_vector(:,1)));
-            if p == 1 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0
+            if p == 2 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0
                 [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
             else
                 vectors_from_matches = vector_overall;
@@ -234,7 +234,7 @@ for p = 1:frames
                 vectors(directions,:) = NaN;
             end
             
-            vector_total(:,:,p) = vectors;
+            vector_total(:,:,p-1) = vectors;
             filter_index = p-filter_vector:p;
             
             for i = 1:filter_vector
@@ -259,9 +259,9 @@ for p = 1:frames
                 end
             end
             
-            vector_total(:,:,p) = vector_overall;
+            vector_total(:,:,p-1) = vector_overall;
             
-            angle_total(:,:,p) = angle_;
+            angle_total(:,:,p-1) = angle_;
             angle_filter_index = p-filter_angle:p;
             
             for i = 1:filter_angle
@@ -279,13 +279,13 @@ for p = 1:frames
                     angle_overall(i,j) = sum(angle_to_sum_overall(i,j,:),'omitnan')/filter_angle;
                 end
             end
-            angle_total(:,:,p) = angle_overall;
+            angle_total(:,:,p-1) = angle_overall;
             angles(:,:,p) = min(angle_overall);
             angles(:,:,p)
             
             for i = 1:directions
                 for j = 1:3
-                    w(i,j) = vectors(i,j)*2*p*0.1;
+                    w(i,j) = vectors(i,j)*2;
                 end
             end
             for i = 1:length(main_vector(:,1))
