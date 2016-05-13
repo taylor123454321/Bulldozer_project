@@ -20,48 +20,47 @@ for i = 1:taken
     image(:,424-20:424) = 0;
     image(1:20,:) = 0;
     image(:,512-20:512) = 0;
-    depthImage(:,:,i) = image;
+    cat = image;
 end
 
 
-sum_ = uint16(zeros(424,512));
-elements = uint16(zeros(424,512));
-dImage_filtered = uint16(zeros(424,512,taken-filter));
-
-for b = 1:filter
-    sum_(:,:) = sum_(:,:) + depthImage(:,:,b);
-    for i = 1:424
-        for j = 1:512
-            if depthImage(i,j,b) ~= 0
-                elements(i,j) = elements(i,j) + 1;
-            end
-        end
-    end
-end
-
-for b = filter+1:taken
-    sum_(:,:) = sum_(:,:) - depthImage(:,:,b-filter) + depthImage(:,:,b);
-    for i = 1:424
-        for j = 1:512
-            if depthImage(i,j,b-filter) ~= 0
-                elements(i,j) = elements(i,j) - 1;
-            end
-            if depthImage(i,j,b) ~= 0
-                elements(i,j) = elements(i,j) + 1;
-            end
-        end
-    end
-    dImage_filtered(:,:,b-filter) = sum_(:,:)./elements(:,:);
-end
-ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,1));
+% sum_ = uint16(zeros(424,512));
+% elements = uint16(zeros(424,512));
+% dImage_filtered = uint16(zeros(424,512,taken-filter));
+% 
+% for b = 1:filter
+%     sum_(:,:) = sum_(:,:) + depthImage(:,:,b);
+%     for i = 1:424
+%         for j = 1:512
+%             if depthImage(i,j,b) ~= 0
+%                 elements(i,j) = elements(i,j) + 1;
+%             end
+%         end
+%     end
+% end
+% 
+% for b = filter+1:taken
+%     sum_(:,:) = sum_(:,:) - depthImage(:,:,b-filter) + depthImage(:,:,b);
+%     for i = 1:424
+%         for j = 1:512
+%             if depthImage(i,j,b-filter) ~= 0
+%                 elements(i,j) = elements(i,j) - 1;
+%             end
+%             if depthImage(i,j,b) ~= 0
+%                 elements(i,j) = elements(i,j) + 1;
+%             end
+%         end
+%     end
+%     dImage_filtered(:,:,b-filter) = sum_(:,:)./elements(:,:);
+% end
+ptCloud = pcfromkinect(depthDevice,cat);%dImage_filtered(:,:,1));
 pcshow(ptCloud)
 
 release(depthDevice);
-
+tic
 normals = pcnormals(ptCloud);
-%view(player,ptCloud);
-%end
 
+toc
 
 x = ptCloud.Location(1:10:end,1:10:end,1);
 y = ptCloud.Location(1:10:end,1:10:end,2);
@@ -85,13 +84,13 @@ end
 
 
 xx = x;yy = y;zz = z;
-% for i = 1:43
-%     for j = 1:52
-%         xx(i,j) = 0;
-%         yy(i,j) = 0;
-%         zz(i,j) = 0;
-%     end
-% end
+for i = 1:43
+    for j = 1:52
+        xx(i,j) = 0;
+        yy(i,j) = 0;
+        zz(i,j) = 0;
+    end
+end
 
 pcshow(ptCloud)
 title('Adjusted Normals of Point Cloud')

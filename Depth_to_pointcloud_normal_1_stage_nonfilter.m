@@ -13,44 +13,15 @@ end
 
 tic
 frames = 30;
-filter = 4;
 
 clear('depthImage')
-for i = 1:filter
-    image = step(depthDevice);
-    %     image(image<600) = 0; %trimming minium and maxium length
-    image(image>800) = 0;
-    image(:,1:20) = 0;
-    image(:,424-20:424) = 0;
-    image(1:20,:) = 0;
-    image(:,512-20:512) = 0;
-    depthImage(:,:,i) = image;
-end
 
-sum_ = uint16(zeros(424,512));
-elements = uint16(zeros(424,512));
-dImage_filtered = uint16(zeros(424,512,frames-filter));
-
-for b = 1:filter
-    sum_(:,:) = sum_(:,:) + depthImage(:,:,b);
-    for i = 1:424
-        for j = 1:512
-            if depthImage(i,j,b) ~= 0
-                elements(i,j) = elements(i,j) + 1;
-            end
-        end
-    end
-end
-
-
-% ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,1));
-% pcshow(ptCloud)
-% release(depthDevice);
 
 directions = 3;
-filter_vector = 8;
-filter_angle = 2;
+filter_vector = 1;
+filter_angle = 1;
 match_angle = 20;
+depthImage = zeros(424,512,frames);
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
 angle_to_sum_overall = zeros(directions,directions,filter_angle);
 vector_total = zeros(directions,3,frames);
@@ -66,11 +37,11 @@ trim_2 = trim_1;
 trim_3 = trim_2;
 
 
-for p = filter+1:frames
+for p = 1:frames
     p
     clear('depthImage')
     for i = 1:3
-        depthImage = step(depthDevice);
+        step(depthDevice);
     end
     image = step(depthDevice);
     %     image(image<600) = 0; %trimming minium and maxium length
@@ -80,21 +51,9 @@ for p = filter+1:frames
     image(1:20,:) = 0;
     image(:,512-20:512) = 0;
     depthImage(:,:,p) = image;
+  
     
-    sum_(:,:) = sum_(:,:) - depthImage(:,:,p-filter) + depthImage(:,:,p);
-    for i = 1:424
-        for j = 1:512
-            if depthImage(i,j,p-filter) ~= 0
-                elements(i,j) = elements(i,j) - 1;
-            end
-            if depthImage(i,j,p) ~= 0
-                elements(i,j) = elements(i,j) + 1;
-            end
-        end
-    end
-    dImage_filtered(:,:,p) = sum_(:,:)./elements(:,:);
-    
-    ptCloud = pcfromkinect(depthDevice,dImage_filtered(:,:,p));
+    ptCloud = pcfromkinect(depthDevice,depthImage(:,:,p));
     
     normals = pcnormals(ptCloud);
     
@@ -151,7 +110,7 @@ for p = filter+1:frames
     yy = zeros(leng,1);
     zz = zeros(leng,1);
     
-    if p == filter+1
+    if p == 1
         pcshow(ptCloud)
         hold on
     end
@@ -229,7 +188,7 @@ for p = filter+1:frames
         
         if main_vector ~= 0
             count = zeros(1,length(main_vector(:,1)));
-            if p == filter+1 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0
+            if p == 1 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0
                 [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
             else
                 vectors_from_matches = vector_overall;
@@ -275,7 +234,7 @@ for p = filter+1:frames
                 vectors(directions,:) = NaN;
             end
             
-            vector_total(:,:,p-1) = vectors;
+            vector_total(:,:,p) = vectors;
             filter_index = p-filter_vector:p;
             
             for i = 1:filter_vector
@@ -300,9 +259,9 @@ for p = filter+1:frames
                 end
             end
             
-            vector_total(:,:,p-1) = vector_overall;
+            vector_total(:,:,p) = vector_overall;
             
-            angle_total(:,:,p-1) = angle_;
+            angle_total(:,:,p) = angle_;
             angle_filter_index = p-filter_angle:p;
             
             for i = 1:filter_angle
@@ -320,13 +279,13 @@ for p = filter+1:frames
                     angle_overall(i,j) = sum(angle_to_sum_overall(i,j,:),'omitnan')/filter_angle;
                 end
             end
-            angle_total(:,:,p-1) = angle_overall;
+            angle_total(:,:,p) = angle_overall;
             angles(:,:,p) = min(angle_overall);
             angles(:,:,p)
             
             for i = 1:directions
                 for j = 1:3
-                    w(i,j) = vectors(i,j)*2;
+                    w(i,j) = vectors(i,j)*2*p*0.1;
                 end
             end
             for i = 1:length(main_vector(:,1))
