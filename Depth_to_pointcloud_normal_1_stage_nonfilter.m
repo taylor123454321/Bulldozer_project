@@ -12,27 +12,28 @@ for i = 1:30
 end
 
 tic
-frames = 10;
+frames = 50;
 
 clear('depthImage')
 
 
 directions = 3;
-filter_vector = 10;
-filter_angle = 6;
+filter_vector = 5;
+filter_angle = 5;
+filter_angle_2 = 5;
 match_angle = 20;
 depthImage = zeros(424,512);
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
-angle_to_sum_overall = zeros(directions,directions,filter_angle);
+angle_to_sum_overall_2 = zeros(directions,directions,filter_angle_2);
 ransac_normal = zeros(directions,3,frames-1);
 vector_total = zeros(directions,3,frames);
-angle_total = zeros(directions,directions,frames);
+angle_total_2 = zeros(directions,directions,frames);
 vector_overall = zeros(directions,3);
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
-angle_ = zeros(directions,directions);
-angles = zeros(1,directions,frames);
-angle_overall = zeros(directions,directions);
+angle__2 = zeros(directions,directions);
+angles_2 = zeros(1,directions,frames);
+angle_overall_2 = zeros(directions,directions);
 trim_1 = 0.125;
 trim_2 = trim_1;
 trim_3 = trim_2;
@@ -51,7 +52,7 @@ for p = 2:frames
     image(1:20,:) = 0;
     image(:,512-20:512) = 0;
     depthImage = image;
-  
+    
     
     ptCloud = pcfromkinect(depthDevice,depthImage);
     
@@ -94,16 +95,16 @@ for p = 2:frames
                         A(k,1) = u(i,j); % vectors that values
                         A(k,2) = v(i,j); % A point
                         A(k,3) = w(i,j); % F location
-%                         F(k,1) = x(i,j);
-%                         F(k,2) = y(i,j);
-%                         F(k,3) = z(i,j);
+                        %                         F(k,1) = x(i,j);
+                        %                         F(k,2) = y(i,j);
+                        %                         F(k,3) = z(i,j);
                         k = k + 1;
                     end
                 end
             end
         end
     end
-
+    
     %     AA(:,:,p) = A;
     uu = A(:,1);
     vv = A(:,2);
@@ -123,7 +124,7 @@ for p = 2:frames
     vectors = 0;
     v = 0;
     vectors_from_matches = 0;
-
+    
     if leng > 20
         vector_count = zeros(leng,1);
         m = 1;
@@ -320,7 +321,7 @@ for p = 2:frames
         end
     end
     for i = 1:directions
-        model = pcfitplane(ptCloud,0.01,vector_overall(i,:));
+        model = pcfitplane(ptCloud,0.03,vector_overall(i,:),3);
         ransac_normal(i,:,p-1) = model.Normal;
         for j = 1:3
             t(1,j) = ransac_normal(i,j,p-1)*2.25;
@@ -328,6 +329,35 @@ for p = 2:frames
         pp = zeros(length(t(:,1)),1);
         quiver3(pp, pp, pp, t(:,1), t(:,2), t(:,3),'black');
     end
+    
+    for i = 1:length(ransac_normal(:,1,1))
+        for j = 1:length(vector_base(:,1))
+            angle__2(i,j) = angle_betweend(ransac_normal(i,:,p-1),vector_base(j,:));
+        end
+    end
+    
+    angle_total_2(:,:,p-1) = angle__2;
+    angle_filter_index_2 = p-filter_angle_2:p;
+    
+    for i = 1:filter_angle_2
+        if angle_filter_index_2(i) < 1
+            angle_filter_index_2(i) = 1;
+        end
+    end
+    
+    for i = 1:filter_angle_2
+        angle_to_sum_overall_2(:,:,i) = angle_total_2(:,:,angle_filter_index_2(i));
+    end
+    
+    for i = 1:directions
+        for j = 1:directions
+            angle_overall_2(i,j) = sum(angle_to_sum_overall_2(i,j,:),'omitnan')/filter_angle_2;
+        end
+    end
+    angle_total_2(:,:,p-1) = angle_overall_2;
+    angles_2(:,:,p) = min(angle_overall_2);
+    angles_2(:,:,p)
+    
 end
 pcshow(ptCloud)
 release(depthDevice);
@@ -394,6 +424,11 @@ for i = 1:length(angles(1,3,:))
     b(i) = angles(1,2,i);
     c(i) = angles(1,3,i);
 end
+for i = 1:length(angles_2(1,3,:))
+    d(i) = angles_2(1,1,i);
+    e(i) = angles_2(1,2,i);
+    f(i) = angles_2(1,3,i);
+end
 
 figure
 plot(a)
@@ -401,7 +436,15 @@ hold on
 plot(b)
 plot(c)
 grid on
+title('calculated anagles')
 
+figure
+plot(d)
+hold on
+plot(e)
+plot(f)
+grid on
+title('ransac angles')
 
 
 
