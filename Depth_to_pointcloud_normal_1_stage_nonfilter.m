@@ -1,20 +1,21 @@
 clear, clc, close all
 
-depthDevice = imaq.VideoDevice('kinect',2);
+% depthDevice = imaq.VideoDevice('kinect',2);
 load('base_vector')
+load('still_depth_data')
 vector_base = vector_total;
 clear('vector_total')
 
-step(depthDevice);
-
-for i = 1:30
-    depthImage = step(depthDevice);
-end
+% step(depthDevice);
+% 
+% for i = 1:30
+%     depthImage = step(depthDevice);
+% end
 
 tic
 frames = 50;
 
-clear('depthImage')
+% clear('depthImage')
 
 
 directions = 3;
@@ -41,6 +42,7 @@ trim_3 = trim_2;
 
 for p = 2:frames
     p
+<<<<<<< Updated upstream
     for i = 1:3
         step(depthDevice);
     end
@@ -53,6 +55,24 @@ for p = 2:frames
     image(:,512-20:512) = 0;
     depthImage = image;
     
+=======
+%     clear('depthImage')
+%     for i = 1:3
+%         step(depthDevice);
+%     end
+%     image = step(depthDevice);
+%     %     image(image<600) = 0; %trimming minium and maxium length
+%     image(image>800) = 0;
+%     image(:,1:20) = 0;
+%     image(:,424-20:424) = 0;
+%     image(1:20,:) = 0;
+%     image(:,512-20:512) = 0;
+%     depthImage(:,:,p) = image;
+  
+    
+%     ptCloud = pcfromkinect(depthDevice,depthImage(:,:,p));
+    ptCloud = pointCloud(depthImage(:,:,p));
+>>>>>>> Stashed changes
     
     ptCloud = pcfromkinect(depthDevice,depthImage);
     
@@ -360,7 +380,7 @@ for p = 2:frames
     
 end
 pcshow(ptCloud)
-release(depthDevice);
+% release(depthDevice);
 
 
 % quiver3(xxx, yyy, zzz, A_(:,1), A_(:,3), A_(:,2));
