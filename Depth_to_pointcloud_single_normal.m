@@ -58,7 +58,7 @@ pcshow(ptCloud)
 
 release(depthDevice);
 tic
-normals = pcnormals(ptCloud);
+normals = pcnormals(ptCloud,30);
 
 toc
 

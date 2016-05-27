@@ -24,7 +24,7 @@ match_angle = 20;
 depthImage = zeros(424,512);
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
 angle_to_sum_overall = zeros(directions,directions,filter_angle);
-ransac_normal = zeros(directions,3,frames-1);
+ransac_normal = zeros(1,3,frames-1);
 vector_total = zeros(directions,3,frames);
 angle_total = zeros(directions,directions,frames);
 vector_overall = zeros(directions,3);
@@ -256,13 +256,13 @@ for p = 2:frames
                 end
             end
             
-            vector_total(:,:,p-1) = vector_overall;
-            
             for i = 1:length(vector_overall(:,1))
                 for j = 1:length(vector_base(:,1))
                     angle_(i,j) = angle_betweend(vector_overall(i,:),vector_base(j,:));
                 end
             end
+            
+            vector_total(:,:,p-1) = vector_overall;
             
             angle_total(:,:,p-1) = angle_;
             angle_filter_index = p-filter_angle:p;
@@ -319,15 +319,14 @@ for p = 2:frames
             
         end
     end
-    for i = 1:directions
-        model = pcfitplane(ptCloud,0.01,vector_overall(i,:));
-        ransac_normal(i,:,p-1) = model.Normal;
-        for j = 1:3
-            t(1,j) = ransac_normal(i,j,p-1)*2.25;
-        end
-        pp = zeros(length(t(:,1)),1);
-        quiver3(pp, pp, pp, t(:,1), t(:,2), t(:,3),'black');
+    model = pcfitplane(ptCloud,0.01,vector_overall(1,:));
+    ransac_normal(:,:,p-1) = model.Normal;
+    for j = 1:3
+        t(1,j) = vectors_from_matches(1,j)*2;
     end
+    pp = zeros(length(t(:,1)),1);
+    quiver3(pp, pp, pp, t(:,1), t(:,2), t(:,3),'black');
+    
 end
 pcshow(ptCloud)
 release(depthDevice);
