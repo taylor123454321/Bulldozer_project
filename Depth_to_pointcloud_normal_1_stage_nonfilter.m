@@ -42,7 +42,6 @@ trim_3 = trim_2;
 
 for p = 2:frames
     p
-<<<<<<< Updated upstream
     for i = 1:3
         step(depthDevice);
     end
@@ -54,25 +53,6 @@ for p = 2:frames
     image(1:20,:) = 0;
     image(:,512-20:512) = 0;
     depthImage = image;
-    
-=======
-%     clear('depthImage')
-%     for i = 1:3
-%         step(depthDevice);
-%     end
-%     image = step(depthDevice);
-%     %     image(image<600) = 0; %trimming minium and maxium length
-%     image(image>800) = 0;
-%     image(:,1:20) = 0;
-%     image(:,424-20:424) = 0;
-%     image(1:20,:) = 0;
-%     image(:,512-20:512) = 0;
-%     depthImage(:,:,p) = image;
-  
-    
-%     ptCloud = pcfromkinect(depthDevice,depthImage(:,:,p));
-    ptCloud = pointCloud(depthImage(:,:,p));
->>>>>>> Stashed changes
     
     ptCloud = pcfromkinect(depthDevice,depthImage);
     
