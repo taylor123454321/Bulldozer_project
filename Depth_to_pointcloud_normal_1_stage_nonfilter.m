@@ -1,41 +1,36 @@
 clear, clc, close all
 
-% depthDevice = imaq.VideoDevice('kinect',2);
+depthDevice = imaq.VideoDevice('kinect',2);
 load('base_vector')
-load('still_depth_data')
+% load('still_depth_data')
 vector_base = vector_total;
 clear('vector_total')
 
-% step(depthDevice);
-% 
-% for i = 1:30
-%     depthImage = step(depthDevice);
-% end
+step(depthDevice);
+
+for i = 1:30
+    step(depthDevice);
+end
 
 tic
-frames = 50;
+frames = 300;
 
 % clear('depthImage')
 
 
 directions = 3;
-filter_vector = 5;
-filter_angle = 5;
-filter_angle_2 = 5;
-match_angle = 20;
+filter_vector = 10;
+filter_angle = 10;
+match_angle = 5;
 depthImage = zeros(424,512);
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
-angle_to_sum_overall_2 = zeros(directions,directions,filter_angle_2);
 ransac_normal = zeros(directions,3,frames-1);
 vector_total = zeros(directions,3,frames);
-angle_total_2 = zeros(directions,directions,frames);
 vector_overall = zeros(directions,3);
 max_matches = 500;
 vector_time = zeros(max_matches,frames);
-angle__2 = zeros(directions,directions);
-angles_2 = zeros(1,directions,frames);
 angle_overall_2 = zeros(directions,directions);
-trim_1 = 0.125;
+trim_1 = 0.07;
 trim_2 = trim_1;
 trim_3 = trim_2;
 
@@ -118,7 +113,7 @@ for p = 2:frames
         pcshow(ptCloud)
         hold on
     end
-    quiver3(xx, yy, zz, uu, vv, ww,'blue');
+%     quiver3(xx, yy, zz, uu, vv, ww,'blue');
     
     main_vector = 0;
     vectors = 0;
@@ -313,54 +308,16 @@ for p = 2:frames
             nn = zeros(length(y(:,1)),1);
             oo = zeros(length(w(:,1)),1);
             
-            quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
-            quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
-            quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
+%             quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+%             quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
+%             quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
             quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
             
         end
     end
-    for i = 1:directions
-        model = pcfitplane(ptCloud,0.03,vector_overall(i,:),3);
-        ransac_normal(i,:,p-1) = model.Normal;
-        for j = 1:3
-            t(1,j) = ransac_normal(i,j,p-1)*2.25;
-        end
-        pp = zeros(length(t(:,1)),1);
-        quiver3(pp, pp, pp, t(:,1), t(:,2), t(:,3),'black');
-    end
-    
-    for i = 1:length(ransac_normal(:,1,1))
-        for j = 1:length(vector_base(:,1))
-            angle__2(i,j) = angle_betweend(ransac_normal(i,:,p-1),vector_base(j,:));
-        end
-    end
-    
-    angle_total_2(:,:,p-1) = angle__2;
-    angle_filter_index_2 = p-filter_angle_2:p;
-    
-    for i = 1:filter_angle_2
-        if angle_filter_index_2(i) < 1
-            angle_filter_index_2(i) = 1;
-        end
-    end
-    
-    for i = 1:filter_angle_2
-        angle_to_sum_overall_2(:,:,i) = angle_total_2(:,:,angle_filter_index_2(i));
-    end
-    
-    for i = 1:directions
-        for j = 1:directions
-            angle_overall_2(i,j) = sum(angle_to_sum_overall_2(i,j,:),'omitnan')/filter_angle_2;
-        end
-    end
-    angle_total_2(:,:,p-1) = angle_overall_2;
-    angles_2(:,:,p) = min(angle_overall_2);
-    angles_2(:,:,p)
-    
 end
 pcshow(ptCloud)
-% release(depthDevice);
+release(depthDevice);
 
 
 % quiver3(xxx, yyy, zzz, A_(:,1), A_(:,3), A_(:,2));
@@ -424,11 +381,6 @@ for i = 1:length(angles(1,3,:))
     b(i) = angles(1,2,i);
     c(i) = angles(1,3,i);
 end
-for i = 1:length(angles_2(1,3,:))
-    d(i) = angles_2(1,1,i);
-    e(i) = angles_2(1,2,i);
-    f(i) = angles_2(1,3,i);
-end
 
 figure
 plot(a)
@@ -438,13 +390,7 @@ plot(c)
 grid on
 title('calculated anagles')
 
-figure
-plot(d)
-hold on
-plot(e)
-plot(f)
-grid on
-title('ransac angles')
+
 
 
 
