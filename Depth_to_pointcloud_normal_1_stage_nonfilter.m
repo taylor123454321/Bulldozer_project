@@ -4,7 +4,7 @@ depthDevice = imaq.VideoDevice('kinect',2);
 load('base_vector')
 % load('still_depth_data')
 % vector_base = vector_total;
-reuse = 1;
+reuse = 0;
 
 clear('vector_total')
 
@@ -15,7 +15,7 @@ for i = 1:30
 end
 
 tic
-frames = 70;
+frames = 2;
 
 % clear('depthImage')
 
@@ -112,10 +112,10 @@ for p = 2:frames
     zz = zeros(leng,1);
     
     if p == 2
-        pcshow(ptCloud)
+%         pcshow(ptCloud)
         hold on
     end
-%     quiver3(xx, yy, zz, uu, vv, ww,'blue');
+    quiver3(xx, yy, zz, uu, vv, ww);
     
     main_vector = 0;
     vectors = 0;
@@ -314,15 +314,16 @@ for p = 2:frames
             nn = zeros(length(y(:,1)),1);
             oo = zeros(length(w(:,1)),1);
             
-%             quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
-%             quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
-%             quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
+            quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+            quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
+            quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
             quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
             
         end
     end
 end
-pcshow(ptCloud)
+% pcshow(ptCloud)
+grid on
 release(depthDevice);
 
 
@@ -380,7 +381,7 @@ oo = zeros(length(w(:,1)),1);
 % quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
 % quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
 % quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
-quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'green');
+% quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'green');
 
 for i = 1:length(angles(1,3,:))
     a(i) = angles(1,1,i);

@@ -54,7 +54,7 @@ end
 %     dImage_filtered(:,:,b-filter) = sum_(:,:)./elements(:,:);
 % end
 ptCloud = pcfromkinect(depthDevice,cat);%dImage_filtered(:,:,1));
-pcshow(ptCloud)
+% pcshow(ptCloud)
 
 release(depthDevice);
 tic
@@ -92,7 +92,7 @@ for i = 1:43
     end
 end
 
-pcshow(ptCloud)
+% pcshow(ptCloud)
 title('Adjusted Normals of Point Cloud')
 hold on
 quiver3(xx, yy, zz, u, v, w);
@@ -237,15 +237,48 @@ if leng > 20
     end
 end
 
+
+for i = 1:directions
+    for j = 1:3
+        w(i,j) = vectors(i,j)*2;
+    end
+end
+for i = 1:length(main_vector(:,1))
+    for j = 1:3
+        u(i,j) = main_vector(i,j)*1.25;
+    end
+end
+for i = 1:directions
+    for j = 1:3
+        z(i,j) = v(i,j)*1.5;
+    end
+end
+for i = 1:directions
+    for j = 1:3
+        y(i,j) = vectors_from_matches(i,j)*1.75;
+    end
+end
+
+mm = zeros(length(u(:,1)),1);
+ll = zeros(length(z(:,1)),1);
+nn = zeros(length(y(:,1)),1);
+oo = zeros(length(w(:,1)),1);
+
+quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
+quiver3(ll, ll, ll, z(:,1), z(:,2), z(:,3),'green');
+quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'cyan');
+quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'red');
+
+
 % 
 % for i = 1:length(main_vector(:,1))
 %     for j = 1:3
 %         u(i,j) = main_vector(i,j)*1.25;
 %     end
 % end
-
-
-mm = zeros(length(u(:,1)),1);
+% 
+% 
+% mm = zeros(length(u(:,1)),1);
 % quiver3(mm, mm, mm, u(:,1), u(:,2), u(:,3),'black');
 
 
