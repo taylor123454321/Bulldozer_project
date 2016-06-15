@@ -58,7 +58,7 @@ pcshow(ptCloud)
 
 release(depthDevice);
 tic
-normals = pcnormals(ptCloud,40);
+normals = pcnormals(ptCloud,80);
 
 toc
 
@@ -69,7 +69,7 @@ u = normals(1:10:end,1:10:end,1);
 v = normals(1:10:end,1:10:end,2);
 w = normals(1:10:end,1:10:end,3);
 
-sensorCenter = [0,0,0.3];
+sensorCenter = [0,0,0];
 for k = 1 : numel(x)
     p1 = sensorCenter - [x(k),y(k),z(k)];
     p2 = [u(k),v(k),w(k)];
@@ -237,12 +237,12 @@ if leng > 20
     end
 end
 
-
-for i = 1:length(main_vector(:,1))
-    for j = 1:3
-        u(i,j) = main_vector(i,j)*1.25;
-    end
-end
+% 
+% for i = 1:length(main_vector(:,1))
+%     for j = 1:3
+%         u(i,j) = main_vector(i,j)*1.25;
+%     end
+% end
 
 
 mm = zeros(length(u(:,1)),1);

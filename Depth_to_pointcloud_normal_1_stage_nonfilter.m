@@ -3,7 +3,9 @@ clear, clc, close all
 depthDevice = imaq.VideoDevice('kinect',2);
 load('base_vector')
 % load('still_depth_data')
-vector_base = vector_total;
+% vector_base = vector_total;
+reuse = 1;
+
 clear('vector_total')
 
 step(depthDevice);
@@ -13,14 +15,14 @@ for i = 1:30
 end
 
 tic
-frames = 300;
+frames = 70;
 
 % clear('depthImage')
 
 
 directions = 3;
-filter_vector = 10;
-filter_angle = 10;
+filter_vector = 1;
+filter_angle = 1;
 match_angle = 5;
 depthImage = zeros(424,512);
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
@@ -188,7 +190,11 @@ for p = 2:frames
         if main_vector ~= 0
             count = zeros(1,length(main_vector(:,1)));
             if p == 2 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0
-                [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+                if reuse
+                    vectors_from_matches = last_vector;
+                else
+                    [vectors_from_matches,check] = find_n(main_vector, directions, corr_value); % finds independent vectors from the matches
+                end
             else
                 vectors_from_matches = vector_overall;
             end
@@ -388,10 +394,13 @@ hold on
 plot(b)
 plot(c)
 grid on
-title('calculated anagles')
+title('calculated angles')
 
 
 
+last_vector = vector_total(:,:,frames-1);
+% vector_base = vector_total(:,:,frames-1);
+save('base_vector','vector_base','last_vector')
 
 
 
