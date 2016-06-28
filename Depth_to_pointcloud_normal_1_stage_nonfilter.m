@@ -15,14 +15,15 @@ for i = 1:30
 end
 
 tic
-frames = 180;
+profile on
+frames = 40;
 
 % clear('depthImage')
 
 
 directions = 3;
-filter_vector = 3;
-filter_angle = 3;
+filter_vector = 5;
+filter_angle = 5;
 match_angle = 5;
 depthImage = zeros(424,512);
 vectors_to_sum_overall = zeros(directions,3,filter_vector);
@@ -39,6 +40,7 @@ trim_3 = trim_2;
 
 for p = 2:frames
     p
+    tic
     for i = 1:3
         step(depthDevice);
     end
@@ -50,14 +52,14 @@ for p = 2:frames
     image(1:20,:) = 0;
     image(:,512-20:512) = 0;
     depthImage = image;
-    
+    pic_time(p) = toc;
+    tic
     ptCloud = pcfromkinect(depthDevice,depthImage);
     
-    tic
     normals = pcnormals(ptCloud,40);
-    toc
+    suf_time(p) = toc;
     
-    
+    tic
     x = ptCloud.Location(1:10:end,1:10:end,1);
     y = ptCloud.Location(1:10:end,1:10:end,2);
     z = ptCloud.Location(1:10:end,1:10:end,3);
@@ -110,6 +112,7 @@ for p = 2:frames
     xx = zeros(leng,1);
     yy = zeros(leng,1);
     zz = zeros(leng,1);
+    ore_time(p) = toc;
     
     if p == 2
 %         pcshow(ptCloud)
@@ -117,6 +120,7 @@ for p = 2:frames
     end
 %     quiver3(xx, yy, zz, uu, vv, ww);
     
+    tic
     main_vector = 0;
     vectors = 0;
     v = 0;
@@ -177,7 +181,9 @@ for p = 2:frames
                 matches_cut(i,1) = 0;
             end
         end
+        matches_time(p) = toc;
         
+        tic
         clear('main_vector')
         m = 1;
         for i = 1:length(matches_cut)
@@ -199,6 +205,9 @@ for p = 2:frames
                 vectors_from_matches = vector_overall;
             end
             v = vectors_from_matches;
+            dd_time(p) = toc;
+            
+            tic
             leng_mid = length(main_vector);
             vectors_to_sum = zeros(1,3,directions);
             correrlation = zeros(1,3);
@@ -210,7 +219,9 @@ for p = 2:frames
                 [k,corr_max] = max(correrlation);
                 vectors_to_sum(i,:,corr_max) = main_vector(i,:);
             end
+            match_time(p) = toc;
             
+            tic
             % averaging the matches around the independent vectors
             vectors_from_matches = zeros(directions,3);
             for i = 1:directions
@@ -227,7 +238,9 @@ for p = 2:frames
                     end
                 end
             end
+            orginal_time(p) = toc;
             
+            tic
             clear('vectors')
             vectors = [0 0 0];
             for i = 1:length(vectors_to_average(1,1,:))
@@ -259,13 +272,17 @@ for p = 2:frames
             end
             
             vector_total(:,:,p-1) = vector_overall;
+            filter_time(p) = toc;
             
+            tic
             for i = 1:length(vector_overall(:,1))
                 for j = 1:length(vector_base(:,1))
                     angle_(i,j) = angle_betweend(vector_overall(i,:),vector_base(j,:));
                 end
             end
+            angle_cal_time(p) = toc;
             
+            tic
             angle_total(:,:,p-1) = angle_;
             angle_filter_index = p-filter_angle:p;
             
@@ -287,6 +304,8 @@ for p = 2:frames
             angle_total(:,:,p-1) = angle_overall;
             angles(:,:,p) = min(angle_overall);
             angles(:,:,p)
+            
+            filter_angle_time(p) = toc;
             
             for i = 1:directions
                 for j = 1:3
@@ -403,9 +422,13 @@ last_vector = vector_total(:,:,frames-1);
 % vector_base = vector_total(:,:,frames-1);
 save('base_vector','vector_base','last_vector')
 
+save_time = 1;
 
-
-
+if save_time
+    save('save_times_1','pic_time','suf_time','ore_time',...
+        'matches_time','dd_time','match_time','orginal_time',...
+        'angle_cal_time','filter_time','filter_angle_time')
+end
 
 
 
