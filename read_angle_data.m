@@ -1,6 +1,7 @@
 clear,clc, close all
 
 load('angle_results/angle_data_7')
+angles(1,1,1) = angles(1,1,2);
 
 for i = 1:length(angles(1,3,:))
     a(i) = angles(1,1,i);
