@@ -1,26 +1,26 @@
 clear, clc, close all
+%make sure image acusition toolbox is install or it wont work
+% windows only
 
 depthDevice = imaq.VideoDevice('kinect',2);
 load('base_vector')
 % load('still_depth_data')
 % vector_base = vector_total;
-reuse = 1;
+reuse = 1; %1 if using previous runs data
 
 clear('vector_total')
 
 step(depthDevice);
 
-for i = 1:30
+for i = 1:30 %clear noise
     step(depthDevice);
 end
 
-tic
-profile on
-frames = 40;
+frames = 40; %number of frames to take
 
 % clear('depthImage')
 
-
+%set up matrices and vectors
 directions = 3;
 filter_vector = 5;
 filter_angle = 5;
@@ -37,14 +37,13 @@ trim_1 = 0.07;
 trim_2 = trim_1;
 trim_3 = trim_2;
 
-
+%main loop
 for p = 2:frames
     p
-    tic
     for i = 1:3
-        step(depthDevice);
+        step(depthDevice); %step device to clear noise
     end
-    image = step(depthDevice);
+    image = step(depthDevice); %Crop to make easier to read
     %     image(image<600) = 0; %trimming minium and maxium length
     image(image>800) = 0;
     image(:,1:20) = 0;
@@ -52,14 +51,13 @@ for p = 2:frames
     image(1:20,:) = 0;
     image(:,512-20:512) = 0;
     depthImage = image;
-    pic_time(p) = toc;
-    tic
-    ptCloud = pcfromkinect(depthDevice,depthImage);
+
+    ptCloud = pcfromkinect(depthDevice,depthImage); %Make point cloud
     
-    normals = pcnormals(ptCloud,40);
-    suf_time(p) = toc;
+    normals = pcnormals(ptCloud,40); %Calculate surface norms
     
-    tic
+    
+    %%% flip normals
     x = ptCloud.Location(1:10:end,1:10:end,1);
     y = ptCloud.Location(1:10:end,1:10:end,2);
     z = ptCloud.Location(1:10:end,1:10:end,3);
@@ -103,30 +101,28 @@ for p = 2:frames
             end
         end
     end
+    %%%
     
-    %     AA(:,:,p) = A;
-    uu = A(:,1);
+    uu = A(:,1); % Centre norms
     vv = A(:,2);
     ww = A(:,3);
     leng = length(A);
     xx = zeros(leng,1);
     yy = zeros(leng,1);
     zz = zeros(leng,1);
-    ore_time(p) = toc;
     
-    if p == 2
+    if p == 2 % show first point cloud
 %         pcshow(ptCloud)
         hold on
     end
-%     quiver3(xx, yy, zz, uu, vv, ww);
+%     quiver3(xx, yy, zz, uu, vv, ww); % show vectors
     
-    tic
     main_vector = 0;
     vectors = 0;
     v = 0;
     vectors_from_matches = 0;
     
-    if leng > 20
+    if leng > 20 % if found vectors contiune loop
         vector_count = zeros(leng,1);
         m = 1;
         
@@ -148,6 +144,7 @@ for p = 2:frames
         
         [i,width] = size(vector_count);
         
+        % make count of each vectors
         m = 1;
         n = 0;
         matches = zeros(leng,1);
@@ -173,7 +170,7 @@ for p = 2:frames
         corr_value = 0.5;
         
         cut_off = 0.15*biggest_match;
-        % 0.75 depends on how many matches/vectors there are
+        % 0.15 depends on how many matches/vectors there are
         % cut of the amount of surface area covered with vectors wanting to read to
         % noise. A calculation for this is needed.
         for i = 1:length(matches);
@@ -181,9 +178,7 @@ for p = 2:frames
                 matches_cut(i,1) = 0;
             end
         end
-        matches_time(p) = toc;
         
-        tic
         clear('main_vector')
         m = 1;
         for i = 1:length(matches_cut)
@@ -193,9 +188,9 @@ for p = 2:frames
             end
         end
         
-        if main_vector ~= 0
+        if main_vector ~= 0 %if vectors found contiune
             count = zeros(1,length(main_vector(:,1)));
-            if p == 2 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0
+            if p == 2 || vector_overall(1,1) == 0  || vector_overall(2,2) == 0  || vector_overall(3,3) == 0 %if vectors not = 0 then find them
                 if reuse
                     vectors_from_matches = last_vector;
                 else
@@ -205,9 +200,7 @@ for p = 2:frames
                 vectors_from_matches = vector_overall;
             end
             v = vectors_from_matches;
-            dd_time(p) = toc;
             
-            tic
             leng_mid = length(main_vector);
             vectors_to_sum = zeros(1,3,directions);
             correrlation = zeros(1,3);
@@ -219,9 +212,7 @@ for p = 2:frames
                 [k,corr_max] = max(correrlation);
                 vectors_to_sum(i,:,corr_max) = main_vector(i,:);
             end
-            match_time(p) = toc;
             
-            tic
             % averaging the matches around the independent vectors
             vectors_from_matches = zeros(directions,3);
             for i = 1:directions
@@ -238,9 +229,8 @@ for p = 2:frames
                     end
                 end
             end
-            orginal_time(p) = toc;
             
-            tic
+            %filter vectors
             clear('vectors')
             vectors = [0 0 0];
             for i = 1:length(vectors_to_average(1,1,:))
@@ -272,17 +262,14 @@ for p = 2:frames
             end
             
             vector_total(:,:,p-1) = vector_overall;
-            filter_time(p) = toc;
             
-            tic
             for i = 1:length(vector_overall(:,1))
                 for j = 1:length(vector_base(:,1))
                     angle_(i,j) = angle_betweend(vector_overall(i,:),vector_base(j,:));
                 end
             end
-            angle_cal_time(p) = toc;
             
-            tic
+            %filter
             angle_total(:,:,p-1) = angle_;
             angle_filter_index = p-filter_angle:p;
             
@@ -304,9 +291,8 @@ for p = 2:frames
             angle_total(:,:,p-1) = angle_overall;
             angles(:,:,p) = min(angle_overall);
             angles(:,:,p)
-            
-            filter_angle_time(p) = toc;
-            
+                        
+            %show directions
             for i = 1:directions
                 for j = 1:3
                     w(i,j) = vectors(i,j)*2;
@@ -402,6 +388,7 @@ oo = zeros(length(w(:,1)),1);
 % quiver3(nn, nn, nn, y(:,1), y(:,2), y(:,3),'red');
 % quiver3(oo, oo, oo, w(:,1), w(:,2), w(:,3),'green');
 
+%display angle data
 for i = 1:length(angles(1,3,:))
     a(i) = angles(1,1,i);
     b(i) = angles(1,2,i);
@@ -417,18 +404,12 @@ grid on
 title('calculated angles')
 
 
+% save vectors till next time
 
 last_vector = vector_total(:,:,frames-1);
 % vector_base = vector_total(:,:,frames-1);
 save('base_vector','vector_base','last_vector')
 
-save_time = 1;
-
-if save_time
-    save('save_times_1','pic_time','suf_time','ore_time',...
-        'matches_time','dd_time','match_time','orginal_time',...
-        'angle_cal_time','filter_time','filter_angle_time')
-end
 
 
 
